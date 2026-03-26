@@ -5,14 +5,16 @@ spring:
   application:
     name: hmdp-ai-service
   ai:
-    openai:
-      api-key: ${OPENAI_API_KEY:}
+    dashscope:
+      # 阿里云通义千问 API-Key
+      api-key: sk-e3179f706a1646ee82eb4920d1bf0a1e
       chat:
         options:
-          model: ${OPENAI_MODEL:gpt-4o-mini}
+          # 阿里云最新 Flash 模型（通义千问高性能轻量版）
+          model: qwen-turbo-flash
+          # 温度参数：0~1，越低回答越精准稳定
           temperature: 0.2
 
 logging:
   level:
     com.hmdp.ai: info
-
