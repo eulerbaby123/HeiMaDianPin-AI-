@@ -1,0 +1,13 @@
+C:\Users\xwj\OneDrive\Documents\New project\hmdp-ai-service\src\main\java\com\hmdp\ai\controller\InternalAiController.java
+C:\Users\xwj\OneDrive\Documents\New project\hmdp-ai-service\src\main\java\com\hmdp\ai\dto\ChunkSummaryRequest.java
+C:\Users\xwj\OneDrive\Documents\New project\hmdp-ai-service\src\main\java\com\hmdp\ai\dto\ChunkSummaryResponse.java
+C:\Users\xwj\OneDrive\Documents\New project\hmdp-ai-service\src\main\java\com\hmdp\ai\dto\FinalSummaryRequest.java
+C:\Users\xwj\OneDrive\Documents\New project\hmdp-ai-service\src\main\java\com\hmdp\ai\dto\FinalSummaryResponse.java
+C:\Users\xwj\OneDrive\Documents\New project\hmdp-ai-service\src\main\java\com\hmdp\ai\dto\IntentParseRequest.java
+C:\Users\xwj\OneDrive\Documents\New project\hmdp-ai-service\src\main\java\com\hmdp\ai\dto\IntentParseResponse.java
+C:\Users\xwj\OneDrive\Documents\New project\hmdp-ai-service\src\main\java\com\hmdp\ai\dto\RecommendReasonRequest.java
+C:\Users\xwj\OneDrive\Documents\New project\hmdp-ai-service\src\main\java\com\hmdp\ai\dto\RecommendReasonResponse.java
+C:\Users\xwj\OneDrive\Documents\New project\hmdp-ai-service\src\main\java\com\hmdp\ai\dto\RecommendReasonShop.java
+C:\Users\xwj\OneDrive\Documents\New project\hmdp-ai-service\src\main\java\com\hmdp\ai\dto\ReviewSnippet.java
+C:\Users\xwj\OneDrive\Documents\New project\hmdp-ai-service\src\main\java\com\hmdp\ai\HmdpAiServiceApplication.java
+C:\Users\xwj\OneDrive\Documents\New project\hmdp-ai-service\src\main\java\com\hmdp\ai\service\AiOrchestrationService.java

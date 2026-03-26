@@ -1,0 +1,59 @@
+server:
+  port: 8081
+spring:
+  application:
+    name: hmdp
+  # 补充：RabbitMQ配置（官方有，你缺失的核心项）
+  rabbitmq:
+    host: 192.168.254.129
+    port: 5672
+    username: guest
+    password: guest
+    # 可选补充：RabbitMQ连接池&重试配置（黑马点评项目常用，避免连接异常）
+    connection-timeout: 15000
+    template:
+      retry:
+        enabled: true
+        initial-interval: 1000ms
+        max-interval: 10000ms
+        multiplier: 2
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    # 补充：allowPublicKeyRetrieval=true（解决MySQL 8.0+连接权限问题）
+    url: jdbc:mysql://127.0.0.1:3306/hmdp?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: 123321
+  redis:
+    host: 192.168.254.129
+    port: 6379
+    password: 123321 # 你的自定义配置，保留
+    lettuce:
+      pool:
+        max-active: 10
+        max-idle: 10
+        min-idle: 1
+        time-between-eviction-runs: 10s
+  jackson:
+    default-property-inclusion: non_null # JSON处理时忽略非空字段
+mybatis-plus:
+  type-aliases-package: com.hmdp.entity # 别名扫描包
+  # 可选补充：MyBatis-Plus日志配置（方便调试SQL）
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+logging:
+  level:
+    com.hmdp: debug
+
+hmdp:
+  ai:
+    base-url: http://127.0.0.1:8090
+    connect-timeout-ms: 1500
+    read-timeout-ms: 8000
+    summary-max-blogs: 120
+    summary-group-size: 20
+    summary-ttl-minutes: 720
+    chunk-ttl-minutes: 720
+    assistant-radius-meters: 5000
+    assistant-candidate-limit: 20
+    assistant-top-n: 5
+    assistant-ttl-minutes: 10

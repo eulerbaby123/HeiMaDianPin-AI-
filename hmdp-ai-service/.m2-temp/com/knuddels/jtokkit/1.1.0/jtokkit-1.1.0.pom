@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <!-- This module was also published with a richer model, Gradle metadata,  -->
+  <!-- which should be used instead. Do not delete the following line which  -->
+  <!-- is to indicate to Gradle or any Gradle module metadata file consumer  -->
+  <!-- that they should prefer consuming it instead. -->
+  <!-- do_not_remove: published-with-gradle-metadata -->
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.knuddels</groupId>
+  <artifactId>jtokkit</artifactId>
+  <version>1.1.0</version>
+  <name>JTokkit</name>
+  <description>JTokkit is a Java tokenizer library designed for use with OpenAI models.</description>
+  <url>https://github.com/knuddelsgmbh/jtokkit</url>
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://opensource.org/licenses/MIT</url>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <id>pmueller</id>
+      <name>Philip Müller</name>
+      <email>p.mueller@knuddels.de</email>
+      <organization>Knuddels GmbH &amp; Co. KG</organization>
+      <organizationUrl>https://www.knuddels.de</organizationUrl>
+    </developer>
+  </developers>
+  <scm>
+    <connection>scm:git:git://github.com/knuddelsgmbh/jtokkit.git</connection>
+    <developerConnection>scm:git:ssh://github.com/knuddelsgmbh/jtokkit.git</developerConnection>
+    <url>https://github.com/knuddelsgmbh/jtokkit</url>
+  </scm>
+</project>
