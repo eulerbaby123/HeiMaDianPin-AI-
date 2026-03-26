@@ -1,0 +1,19 @@
+# OS / IDE
+.idea/
+*.iml
+
+# Local temp outputs
+*.out
+*.log
+
+# Maven / build artifacts
+**/.m2-temp/
+**/target/
+
+# Nginx runtime files
+**/logs/
+**/nginx.pid
+
+# Local test artifacts
+ai_test_report_v2.md
+ai_test_results_v2.json

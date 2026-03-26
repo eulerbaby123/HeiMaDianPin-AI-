@@ -51,6 +51,7 @@ public class AiServiceImpl implements IAiService {
     private static final Pattern SPLIT_PATTERN = Pattern.compile("[,，。！？!?.;；\\n\\r]");
     private static final Pattern BLOG_TITLE_NOISE_PATTERN = Pattern.compile("(?i)^AI探店-\\d+-\\d+.*");
     private static final Pattern SUMMARY_NOISE_PATTERN = Pattern.compile("(?i)(AI探店-\\d+-\\d+|AI样本店-\\d+-\\d+)");
+    private static final Pattern STORE_MAIN_BIZ_NOISE_PATTERN = Pattern.compile("(?:\\u8fd9\\u5bb6|\\u8be5\\u5e97|\\u672c\\u5e97)?\\s*\\u95e8\\u5e97\\s*\\u4e3b\\u6253\\s*[^\\u3002\\uff0c,;\\uFF1B\\n]{0,40}?\\u5e97");
     private static final Pattern PHONE_PATTERN = Pattern.compile("(?<!\\d)1\\d{10}(?!\\d)");
     private static final Pattern ID_CARD_PATTERN = Pattern.compile("(?<!\\d)\\d{17}[0-9Xx](?!\\d)");
     private static final Pattern SPACED_PHONE_PATTERN = Pattern.compile("1\\s*[3-9](?:\\s*\\d){9}");
@@ -1645,7 +1646,10 @@ public class AiServiceImpl implements IAiService {
             if (StrUtil.isBlank(point)) {
                 continue;
             }
-            String p = point.trim();
+            String p = stripSummaryNoiseFragments(point.trim());
+            if (StrUtil.isBlank(p)) {
+                continue;
+            }
             if (p.length() > 60) {
                 p = p.substring(0, 60);
             }
@@ -1663,8 +1667,11 @@ public class AiServiceImpl implements IAiService {
         if (StrUtil.isBlank(point)) {
             return false;
         }
-        String p = sanitizeText(point);
+        String p = stripSummaryNoiseFragments(sanitizeText(point));
         if (p.length() < 4) {
+            return false;
+        }
+        if (STORE_MAIN_BIZ_NOISE_PATTERN.matcher(p).find()) {
             return false;
         }
         if (SUMMARY_NOISE_PATTERN.matcher(p).find()) {
@@ -1682,7 +1689,7 @@ public class AiServiceImpl implements IAiService {
     }
 
     private String sanitizeSummaryText(String summary, String shopName, List<String> highFrequency, List<String> uniqueHighlights) {
-        String normalized = sanitizeText(summary);
+        String normalized = stripSummaryNoiseFragments(sanitizeText(summary));
         if (StrUtil.isBlank(normalized) || SUMMARY_NOISE_PATTERN.matcher(normalized).find()) {
             String merged = shopName + "整体口碑集中在：" + joinPoints(highFrequency, "；");
             if (CollUtil.isNotEmpty(uniqueHighlights)) {
@@ -1691,6 +1698,25 @@ public class AiServiceImpl implements IAiService {
             return merged;
         }
         return normalized;
+    }
+
+    private String stripSummaryNoiseFragments(String text) {
+        if (StrUtil.isBlank(text)) {
+            return "";
+        }
+        String cleaned = STORE_MAIN_BIZ_NOISE_PATTERN.matcher(text).replaceAll("");
+        cleaned = cleaned.replaceAll("\\s*([\\uFF0C\\u3002;\\uFF1B])\\s*", "$1");
+        cleaned = cleaned.replaceAll("([\\uFF0C\\u3002;\\uFF1B])[\\uFF0C\\u3002;\\uFF1B]+", "$1");
+        cleaned = cleaned.replaceAll("\\s{2,}", " ").trim();
+        cleaned = StrUtil.removePrefix(cleaned, "\uFF0C");
+        cleaned = StrUtil.removePrefix(cleaned, "\u3002");
+        cleaned = StrUtil.removePrefix(cleaned, ";");
+        cleaned = StrUtil.removePrefix(cleaned, "\uFF1B");
+        cleaned = StrUtil.removeSuffix(cleaned, "\uFF0C");
+        cleaned = StrUtil.removeSuffix(cleaned, "\u3002");
+        cleaned = StrUtil.removeSuffix(cleaned, ";");
+        cleaned = StrUtil.removeSuffix(cleaned, "\uFF1B");
+        return cleaned.trim();
     }
 
     private String sanitizeBlogTitleForSummary(String title) {
