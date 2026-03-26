@@ -1,0 +1,152 @@
+﻿{
+    "timestamp":  "2026-03-26 21:02:42",
+    "assistant":  [
+                      {
+                          "case":  "regular_bbq_cheap",
+                          "query":  "???????????????",
+                          "fromCache":  null,
+                          "intentSummary":  null,
+                          "keywords":  null,
+                          "top":  [
+
+                                  ]
+                      },
+                      {
+                          "case":  "regular_light_veggie",
+                          "query":  "????????????????????",
+                          "fromCache":  null,
+                          "intentSummary":  null,
+                          "keywords":  null,
+                          "top":  [
+
+                                  ]
+                      },
+                      {
+                          "case":  "regular_buy_water_tea_rest",
+                          "query":  "??????????????????",
+                          "fromCache":  null,
+                          "intentSummary":  null,
+                          "keywords":  null,
+                          "top":  [
+
+                                  ]
+                      },
+                      {
+                          "case":  "complex_conflict_constraints",
+                          "query":  "?????????????????50?????1km?????",
+                          "fromCache":  null,
+                          "intentSummary":  null,
+                          "keywords":  null,
+                          "top":  [
+
+                                  ]
+                      },
+                      {
+                          "case":  "complex_multi_intent",
+                          "query":  "?????????????????????????????????",
+                          "fromCache":  null,
+                          "intentSummary":  null,
+                          "keywords":  null,
+                          "top":  [
+
+                                  ]
+                      },
+                      {
+                          "case":  "complex_noise_colloquial",
+                          "query":  "?????????????????????????????",
+                          "fromCache":  null,
+                          "intentSummary":  null,
+                          "keywords":  null,
+                          "top":  [
+
+                                  ]
+                      }
+                  ],
+    "risk":  [
+                 {
+                     "case":  "safe_normal",
+                     "engine":  null,
+                     "pass":  null,
+                     "riskLevel":  null,
+                     "riskScore":  null,
+                     "riskTags":  null,
+                     "reasons":  null,
+                     "suggestion":  null,
+                     "fromCache":  null
+                 },
+                 {
+                     "case":  "ad_contact",
+                     "engine":  null,
+                     "pass":  null,
+                     "riskLevel":  null,
+                     "riskScore":  null,
+                     "riskTags":  null,
+                     "reasons":  null,
+                     "suggestion":  null,
+                     "fromCache":  null
+                 },
+                 {
+                     "case":  "illegal",
+                     "engine":  null,
+                     "pass":  null,
+                     "riskLevel":  null,
+                     "riskScore":  null,
+                     "riskTags":  null,
+                     "reasons":  null,
+                     "suggestion":  null,
+                     "fromCache":  null
+                 },
+                 {
+                     "case":  "privacy_leak",
+                     "engine":  null,
+                     "pass":  null,
+                     "riskLevel":  null,
+                     "riskScore":  null,
+                     "riskTags":  null,
+                     "reasons":  null,
+                     "suggestion":  null,
+                     "fromCache":  null
+                 },
+                 {
+                     "case":  "abuse",
+                     "engine":  null,
+                     "pass":  null,
+                     "riskLevel":  null,
+                     "riskScore":  null,
+                     "riskTags":  null,
+                     "reasons":  null,
+                     "suggestion":  null,
+                     "fromCache":  null
+                 },
+                 {
+                     "case":  "borderline_marketing",
+                     "engine":  null,
+                     "pass":  null,
+                     "riskLevel":  null,
+                     "riskScore":  null,
+                     "riskTags":  null,
+                     "reasons":  null,
+                     "suggestion":  null,
+                     "fromCache":  null
+                 }
+             ],
+    "summary":  [
+                    {
+                        "shopId":  1,
+                        "first":  {
+                                      "engine":  null,
+                                      "fromCache":  null,
+                                      "reviewCount":  null,
+                                      "chunkCount":  null,
+                                      "finalSummary":  null
+                                  },
+                        "second":  {
+                                       "engine":  null,
+                                       "fromCache":  null,
+                                       "reviewCount":  null,
+                                       "chunkCount":  null,
+                                       "finalSummary":  null
+                                   }
+                    }
+                ]
+}

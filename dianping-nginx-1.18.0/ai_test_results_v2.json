@@ -1,0 +1,692 @@
+﻿{
+    "timestamp":  "2026-03-26 23:30:28",
+    "baseUrl":  "http://127.0.0.1:8080/api",
+    "assistant":  {
+                      "passCount":  5,
+                      "totalCount":  6,
+                      "cacheHitSecondCount":  6,
+                      "uniqueTop1Count":  3,
+                      "cases":  [
+                                    {
+                                        "case":  "regular_bbq_cheap",
+                                        "query":  "我想吃烧烤，有没有价格便宜点的",
+                                        "ok":  true,
+                                        "error":  "",
+                                        "cacheOnSecond":  true,
+                                        "recommendCount":  5,
+                                        "includeHitCount":  1,
+                                        "top3ExcludeHitCount":  0,
+                                        "top3WithinBudgetCount":  2,
+                                        "top3WithinDistanceCount":  0,
+                                        "reasonEchoCount":  5,
+                                        "top":  [
+                                                    {
+                                                        "id":  3,
+                                                        "name":  "新白鹿餐厅(运河上街店)",
+                                                        "typeId":  1,
+                                                        "avgPrice":  61,
+                                                        "score":  47,
+                                                        "distance":  1046.9829,
+                                                        "reason":  "距离1.0km，评分4.7，简介提到：家常杭帮菜与清淡菜品选择较多，适合家庭聚餐和胃口清淡人群。，与“我想吃烧烤，有没有价格便宜点的”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  205,
+                                                        "name":  "AI样本店-1-029",
+                                                        "typeId":  1,
+                                                        "avgPrice":  40,
+                                                        "score":  45,
+                                                        "distance":  1127.1299,
+                                                        "reason":  "距离1.1km，评分4.5，简介提到：水晶城门店，主营美食相关服务；可提供停车指引；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“我想吃烧烤，有没有价格便宜点的”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  6,
+                                                        "name":  "幸福里老北京涮锅（丝联店）",
+                                                        "typeId":  1,
+                                                        "avgPrice":  130,
+                                                        "score":  46,
+                                                        "distance":  1741.5767,
+                                                        "reason":  "距离1.7km，评分4.6，简介提到：老北京涮锅，肉类和热汤为主，适合多人聚餐。，与“我想吃烧烤，有没有价格便宜点的”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  25,
+                                                        "name":  "AI样本店-1-011",
+                                                        "typeId":  1,
+                                                        "avgPrice":  151,
+                                                        "score":  48,
+                                                        "distance":  612.4469,
+                                                        "reason":  "距离612m，评分4.8，简介提到：上塘门店，主营美食相关服务；环境干净整洁，适合朋友同行；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“我想吃烧烤，有没有价格便宜点的”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  2,
+                                                        "name":  "蔡馬洪涛烤肉·老北京铜锅涮羊肉",
+                                                        "typeId":  1,
+                                                        "avgPrice":  85,
+                                                        "score":  46,
+                                                        "distance":  170.4498,
+                                                        "reason":  "距离170m，评分4.6，简介提到：主营铜锅涮羊肉与烤肉，晚间营业时间长，适合聚餐。，与“我想吃烧烤，有没有价格便宜点的”匹配度较高。"
+                                                    }
+                                                ],
+                                        "pass":  false
+                                    },
+                                    {
+                                        "case":  "regular_light_veggie",
+                                        "query":  "我最近肠胃不好想吃素，清淡一点",
+                                        "ok":  true,
+                                        "error":  "",
+                                        "cacheOnSecond":  true,
+                                        "recommendCount":  5,
+                                        "includeHitCount":  5,
+                                        "top3ExcludeHitCount":  0,
+                                        "top3WithinBudgetCount":  0,
+                                        "top3WithinDistanceCount":  0,
+                                        "reasonEchoCount":  5,
+                                        "top":  [
+                                                    {
+                                                        "id":  25,
+                                                        "name":  "AI样本店-1-011",
+                                                        "typeId":  1,
+                                                        "avgPrice":  151,
+                                                        "score":  48,
+                                                        "distance":  612.4469,
+                                                        "reason":  "距离612m，评分4.8，简介提到：上塘门店，主营美食相关服务；环境干净整洁，适合朋友同行；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“我最近肠胃不好想吃素，清淡一点”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  225,
+                                                        "name":  "AI样本店-1-049",
+                                                        "typeId":  1,
+                                                        "avgPrice":  91,
+                                                        "score":  46,
+                                                        "distance":  275.0823,
+                                                        "reason":  "距离275m，评分4.6，简介提到：水晶城门店，主营美食相关服务；高峰期建议提前预约；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“我最近肠胃不好想吃素，清淡一点”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  205,
+                                                        "name":  "AI样本店-1-029",
+                                                        "typeId":  1,
+                                                        "avgPrice":  40,
+                                                        "score":  45,
+                                                        "distance":  1127.1299,
+                                                        "reason":  "距离1.1km，评分4.5，简介提到：水晶城门店，主营美食相关服务；可提供停车指引；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“我最近肠胃不好想吃素，清淡一点”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  203,
+                                                        "name":  "AI样本店-1-027",
+                                                        "typeId":  1,
+                                                        "avgPrice":  179,
+                                                        "score":  46,
+                                                        "distance":  1277.4337,
+                                                        "reason":  "距离1.3km，评分4.6，简介提到：大关门店，主营美食相关服务；支持线上核销和到店消费；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“我最近肠胃不好想吃素，清淡一点”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  232,
+                                                        "name":  "AI样本店-1-056",
+                                                        "typeId":  1,
+                                                        "avgPrice":  111,
+                                                        "score":  45,
+                                                        "distance":  1442.8564,
+                                                        "reason":  "距离1.4km，评分4.5，简介提到：远洋乐堤港门店，主营美食相关服务；环境干净整洁，适合朋友同行；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“我最近肠胃不好想吃素，清淡一点”匹配度较高。"
+                                                    }
+                                                ],
+                                        "pass":  true
+                                    },
+                                    {
+                                        "case":  "regular_water_tea_rest",
+                                        "query":  "想买瓶水，附近有可以休息喝茶的店吗",
+                                        "ok":  true,
+                                        "error":  "",
+                                        "cacheOnSecond":  true,
+                                        "recommendCount":  5,
+                                        "includeHitCount":  5,
+                                        "top3ExcludeHitCount":  0,
+                                        "top3WithinBudgetCount":  0,
+                                        "top3WithinDistanceCount":  0,
+                                        "reasonEchoCount":  5,
+                                        "top":  [
+                                                    {
+                                                        "id":  234,
+                                                        "name":  "AI样本店-1-058",
+                                                        "typeId":  1,
+                                                        "avgPrice":  47,
+                                                        "score":  38,
+                                                        "distance":  765.6543,
+                                                        "reason":  "距离766m，评分3.8，简介提到：运河上街门店，主营美食相关服务；门店提供空调与休息区；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“想买瓶水，附近有可以休息喝茶的店吗”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  207,
+                                                        "name":  "AI样本店-1-031",
+                                                        "typeId":  1,
+                                                        "avgPrice":  94,
+                                                        "score":  38,
+                                                        "distance":  1842.4876,
+                                                        "reason":  "距离1.8km，评分3.8，简介提到：远洋乐堤港门店，主营美食相关服务；门店提供空调与休息区；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“想买瓶水，附近有可以休息喝茶的店吗”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  25,
+                                                        "name":  "AI样本店-1-011",
+                                                        "typeId":  1,
+                                                        "avgPrice":  151,
+                                                        "score":  48,
+                                                        "distance":  612.4469,
+                                                        "reason":  "距离612m，评分4.8，简介提到：上塘门店，主营美食相关服务；环境干净整洁，适合朋友同行；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“想买瓶水，附近有可以休息喝茶的店吗”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  225,
+                                                        "name":  "AI样本店-1-049",
+                                                        "typeId":  1,
+                                                        "avgPrice":  91,
+                                                        "score":  46,
+                                                        "distance":  275.0823,
+                                                        "reason":  "距离275m，评分4.6，简介提到：水晶城门店，主营美食相关服务；高峰期建议提前预约；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“想买瓶水，附近有可以休息喝茶的店吗”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  205,
+                                                        "name":  "AI样本店-1-029",
+                                                        "typeId":  1,
+                                                        "avgPrice":  40,
+                                                        "score":  45,
+                                                        "distance":  1127.1299,
+                                                        "reason":  "距离1.1km，评分4.5，简介提到：水晶城门店，主营美食相关服务；可提供停车指引；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“想买瓶水，附近有可以休息喝茶的店吗”匹配度较高。"
+                                                    }
+                                                ],
+                                        "pass":  true
+                                    },
+                                    {
+                                        "case":  "complex_conflict_constraints",
+                                        "query":  "预算50以内，1km内，想要烧烤风味但不要辣也不要肉，要能坐着休息",
+                                        "ok":  true,
+                                        "error":  "",
+                                        "cacheOnSecond":  true,
+                                        "recommendCount":  5,
+                                        "includeHitCount":  5,
+                                        "top3ExcludeHitCount":  0,
+                                        "top3WithinBudgetCount":  1,
+                                        "top3WithinDistanceCount":  2,
+                                        "reasonEchoCount":  5,
+                                        "top":  [
+                                                    {
+                                                        "id":  234,
+                                                        "name":  "AI样本店-1-058",
+                                                        "typeId":  1,
+                                                        "avgPrice":  47,
+                                                        "score":  38,
+                                                        "distance":  765.6543,
+                                                        "reason":  "距离766m，评分3.8，简介提到：运河上街门店，主营美食相关服务；门店提供空调与休息区；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“预算50以内，1km内，想要烧烤风味但不要辣也不要肉，要能坐着休息”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  207,
+                                                        "name":  "AI样本店-1-031",
+                                                        "typeId":  1,
+                                                        "avgPrice":  94,
+                                                        "score":  38,
+                                                        "distance":  1842.4876,
+                                                        "reason":  "距离1.8km，评分3.8，简介提到：远洋乐堤港门店，主营美食相关服务；门店提供空调与休息区；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“预算50以内，1km内，想要烧烤风味但不要辣也不要肉，要能坐着休息”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  25,
+                                                        "name":  "AI样本店-1-011",
+                                                        "typeId":  1,
+                                                        "avgPrice":  151,
+                                                        "score":  48,
+                                                        "distance":  612.4469,
+                                                        "reason":  "距离612m，评分4.8，简介提到：上塘门店，主营美食相关服务；环境干净整洁，适合朋友同行；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“预算50以内，1km内，想要烧烤风味但不要辣也不要肉，要能坐着休息”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  225,
+                                                        "name":  "AI样本店-1-049",
+                                                        "typeId":  1,
+                                                        "avgPrice":  91,
+                                                        "score":  46,
+                                                        "distance":  275.0823,
+                                                        "reason":  "距离275m，评分4.6，简介提到：水晶城门店，主营美食相关服务；高峰期建议提前预约；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“预算50以内，1km内，想要烧烤风味但不要辣也不要肉，要能坐着休息”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  205,
+                                                        "name":  "AI样本店-1-029",
+                                                        "typeId":  1,
+                                                        "avgPrice":  40,
+                                                        "score":  45,
+                                                        "distance":  1127.1299,
+                                                        "reason":  "距离1.1km，评分4.5，简介提到：水晶城门店，主营美食相关服务；可提供停车指引；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“预算50以内，1km内，想要烧烤风味但不要辣也不要肉，要能坐着休息”匹配度较高。"
+                                                    }
+                                                ],
+                                        "pass":  true
+                                    },
+                                    {
+                                        "case":  "complex_multi_intent_health",
+                                        "query":  "今天感冒没胃口，想先买水再找能短休的店，人均100以内，评分高一点",
+                                        "ok":  true,
+                                        "error":  "",
+                                        "cacheOnSecond":  true,
+                                        "recommendCount":  5,
+                                        "includeHitCount":  5,
+                                        "top3ExcludeHitCount":  0,
+                                        "top3WithinBudgetCount":  2,
+                                        "top3WithinDistanceCount":  0,
+                                        "reasonEchoCount":  5,
+                                        "top":  [
+                                                    {
+                                                        "id":  25,
+                                                        "name":  "AI样本店-1-011",
+                                                        "typeId":  1,
+                                                        "avgPrice":  151,
+                                                        "score":  48,
+                                                        "distance":  612.4469,
+                                                        "reason":  "距离612m，评分4.8，简介提到：上塘门店，主营美食相关服务；环境干净整洁，适合朋友同行；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“今天感冒没胃口，想先买水再找能短休的店，人均100以内，评分高一点”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  225,
+                                                        "name":  "AI样本店-1-049",
+                                                        "typeId":  1,
+                                                        "avgPrice":  91,
+                                                        "score":  46,
+                                                        "distance":  275.0823,
+                                                        "reason":  "距离275m，评分4.6，简介提到：水晶城门店，主营美食相关服务；高峰期建议提前预约；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“今天感冒没胃口，想先买水再找能短休的店，人均100以内，评分高一点”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  205,
+                                                        "name":  "AI样本店-1-029",
+                                                        "typeId":  1,
+                                                        "avgPrice":  40,
+                                                        "score":  45,
+                                                        "distance":  1127.1299,
+                                                        "reason":  "距离1.1km，评分4.5，简介提到：水晶城门店，主营美食相关服务；可提供停车指引；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“今天感冒没胃口，想先买水再找能短休的店，人均100以内，评分高一点”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  203,
+                                                        "name":  "AI样本店-1-027",
+                                                        "typeId":  1,
+                                                        "avgPrice":  179,
+                                                        "score":  46,
+                                                        "distance":  1277.4337,
+                                                        "reason":  "距离1.3km，评分4.6，简介提到：大关门店，主营美食相关服务；支持线上核销和到店消费；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“今天感冒没胃口，想先买水再找能短休的店，人均100以内，评分高一点”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  232,
+                                                        "name":  "AI样本店-1-056",
+                                                        "typeId":  1,
+                                                        "avgPrice":  111,
+                                                        "score":  45,
+                                                        "distance":  1442.8564,
+                                                        "reason":  "距离1.4km，评分4.5，简介提到：远洋乐堤港门店，主营美食相关服务；环境干净整洁，适合朋友同行；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“今天感冒没胃口，想先买水再找能短休的店，人均100以内，评分高一点”匹配度较高。"
+                                                    }
+                                                ],
+                                        "pass":  true
+                                    },
+                                    {
+                                        "case":  "complex_noise_colloquial",
+                                        "query":  "哥们今天累麻了，想找个能躺一下喝热水的地方，别太贵，别整太油的",
+                                        "ok":  true,
+                                        "error":  "",
+                                        "cacheOnSecond":  true,
+                                        "recommendCount":  5,
+                                        "includeHitCount":  5,
+                                        "top3ExcludeHitCount":  0,
+                                        "top3WithinBudgetCount":  1,
+                                        "top3WithinDistanceCount":  0,
+                                        "reasonEchoCount":  5,
+                                        "top":  [
+                                                    {
+                                                        "id":  25,
+                                                        "name":  "AI样本店-1-011",
+                                                        "typeId":  1,
+                                                        "avgPrice":  151,
+                                                        "score":  48,
+                                                        "distance":  612.4469,
+                                                        "reason":  "距离612m，评分4.8，简介提到：上塘门店，主营美食相关服务；环境干净整洁，适合朋友同行；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“哥们今天累麻了，想找个能躺一下喝热水的地方，别太贵，别整太油的”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  225,
+                                                        "name":  "AI样本店-1-049",
+                                                        "typeId":  1,
+                                                        "avgPrice":  91,
+                                                        "score":  46,
+                                                        "distance":  275.0823,
+                                                        "reason":  "距离275m，评分4.6，简介提到：水晶城门店，主营美食相关服务；高峰期建议提前预约；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“哥们今天累麻了，想找个能躺一下喝热水的地方，别太贵，别整太油的”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  205,
+                                                        "name":  "AI样本店-1-029",
+                                                        "typeId":  1,
+                                                        "avgPrice":  40,
+                                                        "score":  45,
+                                                        "distance":  1127.1299,
+                                                        "reason":  "距离1.1km，评分4.5，简介提到：水晶城门店，主营美食相关服务；可提供停车指引；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“哥们今天累麻了，想找个能躺一下喝热水的地方，别太贵，别整太油的”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  203,
+                                                        "name":  "AI样本店-1-027",
+                                                        "typeId":  1,
+                                                        "avgPrice":  179,
+                                                        "score":  46,
+                                                        "distance":  1277.4337,
+                                                        "reason":  "距离1.3km，评分4.6，简介提到：大关门店，主营美食相关服务；支持线上核销和到店消费；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“哥们今天累麻了，想找个能躺一下喝热水的地方，别太贵，别整太油的”匹配度较高。"
+                                                    },
+                                                    {
+                                                        "id":  232,
+                                                        "name":  "AI样本店-1-056",
+                                                        "typeId":  1,
+                                                        "avgPrice":  111,
+                                                        "score":  45,
+                                                        "distance":  1442.8564,
+                                                        "reason":  "距离1.4km，评分4.5，简介提到：远洋乐堤港门店，主营美食相关服务；环境干净整洁，适合朋友同行；支持清淡口味和酸口菜品选择，适合感冒期和轻食需求；可提供热水、茶饮和短时休息座位，与“哥们今天累麻了，想找个能躺一下喝热水的地方，别太贵，别整太油的”匹配度较高。"
+                                                    }
+                                                ],
+                                        "pass":  true
+                                    }
+                                ],
+                      "overlapPairs":  [
+                                           {
+                                               "caseA":  "complex_conflict_constraints",
+                                               "caseB":  "regular_bbq_cheap",
+                                               "jaccardTop3":  0,
+                                               "overlapNames":  [
+
+                                                                ]
+                                           },
+                                           {
+                                               "caseA":  "complex_conflict_constraints",
+                                               "caseB":  "complex_multi_intent_health",
+                                               "jaccardTop3":  0.2,
+                                               "overlapNames":  [
+                                                                    "AI样本店-1-011"
+                                                                ]
+                                           },
+                                           {
+                                               "caseA":  "complex_conflict_constraints",
+                                               "caseB":  "regular_light_veggie",
+                                               "jaccardTop3":  0.2,
+                                               "overlapNames":  [
+                                                                    "AI样本店-1-011"
+                                                                ]
+                                           },
+                                           {
+                                               "caseA":  "complex_conflict_constraints",
+                                               "caseB":  "complex_noise_colloquial",
+                                               "jaccardTop3":  0.2,
+                                               "overlapNames":  [
+                                                                    "AI样本店-1-011"
+                                                                ]
+                                           },
+                                           {
+                                               "caseA":  "complex_conflict_constraints",
+                                               "caseB":  "regular_water_tea_rest",
+                                               "jaccardTop3":  1,
+                                               "overlapNames":  [
+                                                                    "AI样本店-1-058",
+                                                                    "AI样本店-1-031",
+                                                                    "AI样本店-1-011"
+                                                                ]
+                                           },
+                                           {
+                                               "caseA":  "regular_bbq_cheap",
+                                               "caseB":  "complex_multi_intent_health",
+                                               "jaccardTop3":  0.2,
+                                               "overlapNames":  [
+                                                                    "AI样本店-1-029"
+                                                                ]
+                                           },
+                                           {
+                                               "caseA":  "regular_bbq_cheap",
+                                               "caseB":  "regular_light_veggie",
+                                               "jaccardTop3":  0.2,
+                                               "overlapNames":  [
+                                                                    "AI样本店-1-029"
+                                                                ]
+                                           },
+                                           {
+                                               "caseA":  "regular_bbq_cheap",
+                                               "caseB":  "complex_noise_colloquial",
+                                               "jaccardTop3":  0.2,
+                                               "overlapNames":  [
+                                                                    "AI样本店-1-029"
+                                                                ]
+                                           },
+                                           {
+                                               "caseA":  "regular_bbq_cheap",
+                                               "caseB":  "regular_water_tea_rest",
+                                               "jaccardTop3":  0,
+                                               "overlapNames":  [
+
+                                                                ]
+                                           },
+                                           {
+                                               "caseA":  "complex_multi_intent_health",
+                                               "caseB":  "regular_light_veggie",
+                                               "jaccardTop3":  1,
+                                               "overlapNames":  [
+                                                                    "AI样本店-1-011",
+                                                                    "AI样本店-1-049",
+                                                                    "AI样本店-1-029"
+                                                                ]
+                                           },
+                                           {
+                                               "caseA":  "complex_multi_intent_health",
+                                               "caseB":  "complex_noise_colloquial",
+                                               "jaccardTop3":  1,
+                                               "overlapNames":  [
+                                                                    "AI样本店-1-011",
+                                                                    "AI样本店-1-049",
+                                                                    "AI样本店-1-029"
+                                                                ]
+                                           },
+                                           {
+                                               "caseA":  "complex_multi_intent_health",
+                                               "caseB":  "regular_water_tea_rest",
+                                               "jaccardTop3":  0.2,
+                                               "overlapNames":  [
+                                                                    "AI样本店-1-011"
+                                                                ]
+                                           },
+                                           {
+                                               "caseA":  "regular_light_veggie",
+                                               "caseB":  "complex_noise_colloquial",
+                                               "jaccardTop3":  1,
+                                               "overlapNames":  [
+                                                                    "AI样本店-1-011",
+                                                                    "AI样本店-1-049",
+                                                                    "AI样本店-1-029"
+                                                                ]
+                                           },
+                                           {
+                                               "caseA":  "regular_light_veggie",
+                                               "caseB":  "regular_water_tea_rest",
+                                               "jaccardTop3":  0.2,
+                                               "overlapNames":  [
+                                                                    "AI样本店-1-011"
+                                                                ]
+                                           },
+                                           {
+                                               "caseA":  "complex_noise_colloquial",
+                                               "caseB":  "regular_water_tea_rest",
+                                               "jaccardTop3":  0.2,
+                                               "overlapNames":  [
+                                                                    "AI样本店-1-011"
+                                                                ]
+                                           }
+                                       ]
+                  },
+    "risk":  {
+                 "passCount":  3,
+                 "totalCount":  6,
+                 "cacheHitSecondCount":  6,
+                 "cases":  [
+                               {
+                                   "case":  "safe_normal",
+                                   "ok":  true,
+                                   "error":  "",
+                                   "pass":  true,
+                                   "riskLevel":  "SAFE",
+                                   "riskScore":  5,
+                                   "riskTags":  [
+                                                    "正常内容"
+                                                ],
+                                   "reasons":  [
+                                                   "未发现明显违规特征。"
+                                               ],
+                                   "suggestion":  "内容整体正常，可发布。",
+                                   "cacheOnSecond":  true,
+                                   "expected":  "SAFE_PASS",
+                                   "expectationMet":  true
+                               },
+                               {
+                                   "case":  "ad_contact_direct",
+                                   "ok":  true,
+                                   "error":  "",
+                                   "pass":  false,
+                                   "riskLevel":  "BLOCK",
+                                   "riskScore":  100,
+                                   "riskTags":  [
+                                                    "广告引流",
+                                                    "联系方式"
+                                                ],
+                                   "reasons":  [
+                                                   "文本疑似包含广告推广或引流词。",
+                                                   "文本疑似出现联系方式或导流信息。"
+                                               ],
+                                   "suggestion":  "内容触发高风险，请删除广告、联系方式、隐私泄露或违法违规描述后再发布。",
+                                   "cacheOnSecond":  true,
+                                   "expected":  "RISK_BLOCK",
+                                   "expectationMet":  true
+                               },
+                               {
+                                   "case":  "illegal_content",
+                                   "ok":  true,
+                                   "error":  "",
+                                   "pass":  false,
+                                   "riskLevel":  "BLOCK",
+                                   "riskScore":  85,
+                                   "riskTags":  [
+                                                    "违法违禁"
+                                                ],
+                                   "reasons":  [
+                                                   "文本包含疑似违法违禁关键词。"
+                                               ],
+                                   "suggestion":  "内容触发高风险，请删除广告、联系方式、隐私泄露或违法违规描述后再发布。",
+                                   "cacheOnSecond":  true,
+                                   "expected":  "RISK_BLOCK",
+                                   "expectationMet":  true
+                               },
+                               {
+                                   "case":  "privacy_leak",
+                                   "ok":  true,
+                                   "error":  "",
+                                   "pass":  true,
+                                   "riskLevel":  "SAFE",
+                                   "riskScore":  5,
+                                   "riskTags":  [
+                                                    "正常内容"
+                                                ],
+                                   "reasons":  [
+                                                   "未发现明显违规特征。"
+                                               ],
+                                   "suggestion":  "内容整体正常，可发布。",
+                                   "cacheOnSecond":  true,
+                                   "expected":  "RISK_BLOCK",
+                                   "expectationMet":  false
+                               },
+                               {
+                                   "case":  "abuse_hate",
+                                   "ok":  true,
+                                   "error":  "",
+                                   "pass":  true,
+                                   "riskLevel":  "SAFE",
+                                   "riskScore":  5,
+                                   "riskTags":  [
+                                                    "正常内容"
+                                                ],
+                                   "reasons":  [
+                                                   "未发现明显违规特征。"
+                                               ],
+                                   "suggestion":  "内容整体正常，可发布。",
+                                   "cacheOnSecond":  true,
+                                   "expected":  "RISK_BLOCK",
+                                   "expectationMet":  false
+                               },
+                               {
+                                   "case":  "obfuscated_ad",
+                                   "ok":  true,
+                                   "error":  "",
+                                   "pass":  true,
+                                   "riskLevel":  "SAFE",
+                                   "riskScore":  5,
+                                   "riskTags":  [
+                                                    "正常内容"
+                                                ],
+                                   "reasons":  [
+                                                   "未发现明显违规特征。"
+                                               ],
+                                   "suggestion":  "内容整体正常，可发布。",
+                                   "cacheOnSecond":  true,
+                                   "expected":  "RISK_BLOCK",
+                                   "expectationMet":  false
+                               }
+                           ]
+             },
+    "summary":  {
+                    "testedShopCount":  5,
+                    "noisyShopCount":  0,
+                    "cacheHitSecondCount":  3,
+                    "shops":  [
+                                  {
+                                      "shopId":  2,
+                                      "ok":  true,
+                                      "error":  "",
+                                      "fromCacheSecond":  false,
+                                      "reviewCount":  0,
+                                      "chunkCount":  0,
+                                      "highFreqCount":  0,
+                                      "uniqueCount":  0,
+                                      "noiseHitCount":  0,
+                                      "noisyPoints":  null
+                                  },
+                                  {
+                                      "shopId":  225,
+                                      "ok":  true,
+                                      "error":  "",
+                                      "fromCacheSecond":  true,
+                                      "reviewCount":  16,
+                                      "chunkCount":  1,
+                                      "highFreqCount":  4,
+                                      "uniqueCount":  0,
+                                      "noiseHitCount":  0,
+                                      "noisyPoints":  null
+                                  },
+                                  {
+                                      "shopId":  25,
+                                      "ok":  true,
+                                      "error":  "",
+                                      "fromCacheSecond":  true,
+                                      "reviewCount":  16,
+                                      "chunkCount":  1,
+                                      "highFreqCount":  3,
+                                      "uniqueCount":  0,
+                                      "noiseHitCount":  0,
+                                      "noisyPoints":  null
+                                  },
+                                  {
+                                      "shopId":  234,
+                                      "ok":  true,
+                                      "error":  "",
+                                      "fromCacheSecond":  true,
+                                      "reviewCount":  16,
+                                      "chunkCount":  1,
+                                      "highFreqCount":  3,
+                                      "uniqueCount":  0,
+                                      "noiseHitCount":  0,
+                                      "noisyPoints":  null
+                                  },
+                                  {
+                                      "shopId":  9,
+                                      "ok":  true,
+                                      "error":  "",
+                                      "fromCacheSecond":  false,
+                                      "reviewCount":  0,
+                                      "chunkCount":  0,
+                                      "highFreqCount":  0,
+                                      "uniqueCount":  0,
+                                      "noiseHitCount":  0,
+                                      "noisyPoints":  null
+                                  }
+                              ]
+                }
+}

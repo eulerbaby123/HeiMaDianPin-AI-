@@ -8,6 +8,7 @@ import java.util.List;
 public class AiShopSummaryDTO {
     private Long shopId;
     private String shopName;
+    private String engine;
     private Integer reviewCount;
     private Integer chunkCount;
     private String finalSummary;
@@ -18,4 +19,3 @@ public class AiShopSummaryDTO {
     private String fingerprint;
     private Boolean fromCache;
 }
-

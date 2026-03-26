@@ -8,6 +8,9 @@ C:\Users\xwj\OneDrive\Documents\New project\hmdp-ai-service\src\main\java\com\hm
 C:\Users\xwj\OneDrive\Documents\New project\hmdp-ai-service\src\main\java\com\hmdp\ai\dto\RecommendReasonRequest.java
 C:\Users\xwj\OneDrive\Documents\New project\hmdp-ai-service\src\main\java\com\hmdp\ai\dto\RecommendReasonResponse.java
 C:\Users\xwj\OneDrive\Documents\New project\hmdp-ai-service\src\main\java\com\hmdp\ai\dto\RecommendReasonShop.java
+C:\Users\xwj\OneDrive\Documents\New project\hmdp-ai-service\src\main\java\com\hmdp\ai\dto\RecommendRerankRequest.java
+C:\Users\xwj\OneDrive\Documents\New project\hmdp-ai-service\src\main\java\com\hmdp\ai\dto\RecommendRerankResponse.java
+C:\Users\xwj\OneDrive\Documents\New project\hmdp-ai-service\src\main\java\com\hmdp\ai\dto\RecommendRerankShop.java
 C:\Users\xwj\OneDrive\Documents\New project\hmdp-ai-service\src\main\java\com\hmdp\ai\dto\ReviewRiskCheckRequest.java
 C:\Users\xwj\OneDrive\Documents\New project\hmdp-ai-service\src\main\java\com\hmdp\ai\dto\ReviewRiskCheckResponse.java
 C:\Users\xwj\OneDrive\Documents\New project\hmdp-ai-service\src\main\java\com\hmdp\ai\dto\ReviewSnippet.java

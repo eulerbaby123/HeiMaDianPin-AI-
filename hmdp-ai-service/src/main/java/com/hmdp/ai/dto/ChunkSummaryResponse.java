@@ -6,9 +6,9 @@ import java.util.List;
 
 @Data
 public class ChunkSummaryResponse {
+    private String engine;
     private String summary;
     private List<String> highFrequencyPoints;
     private List<String> uniquePoints;
     private List<String> keywords;
 }
-

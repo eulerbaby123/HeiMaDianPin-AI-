@@ -1,0 +1,73 @@
+¾Ü¾ø·ÃÎÊ¡£
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective settings
+[WARNING] Unrecognised tag: 'mirror' (position: START_TAG seen ...</localRepository>\n  <mirror>... @57:11)  @ D:\developApp\apache-maven-3.9.12\conf\settings.xml, line 57, column 11
+[WARNING] 
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.hmdp:hm-dianping >------------------------
+[INFO] Building hm-dianping 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:2.3.12.RELEASE:run (default-cli) > test-compile @ hm-dianping >>>
+[INFO] 
+[INFO] --- resources:3.1.0:resources (default-resources) @ hm-dianping ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Copying 1 resource
+[INFO] Copying 5 resources
+[INFO] 
+[INFO] --- compiler:3.8.1:compile (default-compile) @ hm-dianping ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.1.0:testResources (default-testResources) @ hm-dianping ---
+[INFO] Not copying test resources
+[INFO] 
+[INFO] --- compiler:3.8.1:testCompile (default-testCompile) @ hm-dianping ---
+[INFO] Not compiling test sources
+[INFO] 
+[INFO] <<< spring-boot:2.3.12.RELEASE:run (default-cli) < test-compile @ hm-dianping <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:2.3.12.RELEASE:run (default-cli) @ hm-dianping ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::       (v2.3.12.RELEASE)
+
+2026-03-26 23:58:29.073  INFO 52080 --- [           main] com.hmdp.HmDianPingApplication           : Starting HmDianPingApplication on lichangfeng-laptop with PID 52080 (C:\Users\xwj\OneDrive\Documents\New project\dianping-nginx-1.18.0\target\classes started by xwj in C:\Users\xwj\OneDrive\Documents\New project\dianping-nginx-1.18.0)
+2026-03-26 23:58:29.073 DEBUG 52080 --- [           main] com.hmdp.HmDianPingApplication           : Running with Spring Boot v2.3.12.RELEASE, Spring v5.2.15.RELEASE
+2026-03-26 23:58:29.073  INFO 52080 --- [           main] com.hmdp.HmDianPingApplication           : No active profile set, falling back to default profiles: default
+2026-03-26 23:58:29.181  WARN 52080 --- [kground-preinit] o.s.h.c.j.Jackson2ObjectMapperBuilder    : For Jackson Kotlin classes support please add "com.fasterxml.jackson.module:jackson-module-kotlin" to the classpath
+2026-03-26 23:58:29.916  INFO 52080 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode!
+2026-03-26 23:58:29.916  INFO 52080 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-03-26 23:58:29.971  INFO 52080 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 42ms. Found 0 Redis repository interfaces.
+2026-03-26 23:58:38.615  INFO 52080 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 18080 (http)
+2026-03-26 23:58:38.622  INFO 52080 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-03-26 23:58:38.622  INFO 52080 --- [           main] org.apache.catalina.core.StandardEngine  : Starting Servlet engine: [Apache Tomcat/9.0.46]
+2026-03-26 23:58:38.729  INFO 52080 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-03-26 23:58:38.729  INFO 52080 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 9606 ms
+Logging initialized using 'class org.apache.ibatis.logging.stdout.StdOutImpl' adapter.
+Loading class `com.mysql.jdbc.Driver'. This is deprecated. The new driver class is `com.mysql.cj.jdbc.Driver'. The driver is automatically registered via the SPI and manual loading of the driver class is generally unnecessary.
+Registered plugin: 'com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor@3404e5c4'
+Parsed mapper file: 'file [C:\Users\xwj\OneDrive\Documents\New project\dianping-nginx-1.18.0\target\classes\mapper\VoucherMapper.xml]'
+ _ _   |_  _ _|_. ___ _ |    _ 
+| | |\/|_)(_| | |_\  |_)||_|_\ 
+     /               |         
+                        3.4.3 
+2026-03-26 23:58:39.781  INFO 52080 --- [           main] org.redisson.Version                     : Redisson 3.13.6
+2026-03-26 23:58:40.036  INFO 52080 --- [sson-netty-4-13] o.r.c.pool.MasterPubSubConnectionPool    : 1 connections initialized for /192.168.254.129:6379
+2026-03-26 23:58:40.073  INFO 52080 --- [sson-netty-4-21] o.r.c.pool.MasterConnectionPool          : 24 connections initialized for /192.168.254.129:6379
+2026-03-26 23:58:40.256  INFO 52080 --- [           main] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'applicationTaskExecutor'
+2026-03-26 23:58:40.490  INFO 52080 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 18080 (http) with context path ''
+2026-03-26 23:58:40.490  INFO 52080 --- [           main] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [192.168.254.129:5672]
+2026-03-26 23:58:40.533  INFO 52080 --- [           main] o.s.a.r.c.CachingConnectionFactory       : Created new connection: rabbitConnectionFactory#68a426c3:0/SimpleConnection@2b464384 [delegate=amqp://guest@192.168.254.129:5672/, localPort= 61953]
+2026-03-26 23:58:40.600  INFO 52080 --- [           main] com.hmdp.HmDianPingApplication           : Started HmDianPingApplication in 11.922 seconds (JVM running for 12.216)
+2026-03-26 23:58:41.286  INFO 52080 --- [io-18080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-03-26 23:58:41.286  INFO 52080 --- [io-18080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-03-26 23:58:41.293  INFO 52080 --- [io-18080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 7 ms

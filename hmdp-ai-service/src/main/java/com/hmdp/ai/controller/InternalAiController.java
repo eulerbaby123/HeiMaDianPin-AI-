@@ -35,6 +35,11 @@ public class InternalAiController {
         return aiOrchestrationService.recommendReason(request);
     }
 
+    @PostMapping("/recommend/rerank")
+    public RecommendRerankResponse recommendRerank(@RequestBody @Valid RecommendRerankRequest request) {
+        return aiOrchestrationService.recommendRerank(request);
+    }
+
     @PostMapping("/review/risk-check")
     public ReviewRiskCheckResponse reviewRiskCheck(@RequestBody @Valid ReviewRiskCheckRequest request) {
         return aiOrchestrationService.reviewRiskCheck(request);

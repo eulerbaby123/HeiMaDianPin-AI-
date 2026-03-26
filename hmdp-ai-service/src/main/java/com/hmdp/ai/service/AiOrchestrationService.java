@@ -15,6 +15,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class AiOrchestrationService {
+    private static final String ENGINE_LLM = "LLM";
+    private static final String ENGINE_FALLBACK = "FALLBACK";
 
     private static final Pattern SPLIT_PATTERN = Pattern.compile("[,，。！？!?.;；\\n\\r]");
     private static final Pattern AD_LINK_PATTERN = Pattern.compile("(https?://|www\\.|加微|微信|vx|v信|QQ|扣扣|私聊|引流|代理|返利|刷单|推广|代购|点击链接|二维码)", Pattern.CASE_INSENSITIVE);
@@ -65,7 +67,9 @@ public class AiOrchestrationService {
         if (!isValidChunkResponse(response)) {
             return fallbackChunkSummary(request);
         }
-        return normalizeChunk(response);
+        ChunkSummaryResponse normalized = normalizeChunk(response);
+        normalized.setEngine(ENGINE_LLM);
+        return normalized;
     }
 
     public FinalSummaryResponse summarizeFinal(FinalSummaryRequest request) {
@@ -95,6 +99,7 @@ public class AiOrchestrationService {
         if (!StringUtils.hasText(response.getAdvice())) {
             response.setAdvice("建议优先关注高频口碑，再结合距离、评分、人均消费做决策。");
         }
+        response.setEngine(ENGINE_LLM);
         return response;
     }
 
@@ -154,9 +159,44 @@ public class AiOrchestrationService {
         return response;
     }
 
+    public RecommendRerankResponse recommendRerank(RecommendRerankRequest request) {
+        if (request == null || request.getShops() == null || request.getShops().isEmpty()) {
+            RecommendRerankResponse empty = new RecommendRerankResponse();
+            empty.setEngine(ENGINE_FALLBACK);
+            empty.setRankedShopIds(Collections.emptyList());
+            empty.setReasonByShopId(Collections.emptyMap());
+            empty.setScoreByShopId(Collections.emptyMap());
+            return empty;
+        }
+        int topN = request.getTopN() == null || request.getTopN() <= 0
+                ? Math.min(5, request.getShops().size())
+                : Math.min(request.getTopN(), request.getShops().size());
+        RecommendRerankResponse fallback = fallbackRerank(request, topN);
+        if (!aiEnabled) {
+            return fallback;
+        }
+
+        String system = "你是本地生活推荐排序助手。请严格输出JSON，不要输出markdown。";
+        String user = "请根据用户需求对候选店铺做最终排序与筛选，输出JSON字段："
+                + "rankedShopIds(number数组,长度<=" + topN + "),reasonByShopId(object),scoreByShopId(object,0-100)。"
+                + "规则：必须优先满足用户硬约束与排除项，忌口/不要项不可忽略。"
+                + "用户需求：" + sanitize(request.getQuery())
+                + "；包含关键词：" + sanitize(String.join(",", safeStrList(request.getIncludeKeywords())))
+                + "；排除关键词：" + sanitize(String.join(",", safeStrList(request.getExcludeKeywords())))
+                + "；候选店铺：" + toCompactRerankShops(request.getShops());
+        RecommendRerankResponse response = callAiForJson(system, user, RecommendRerankResponse.class);
+        if (response == null || response.getRankedShopIds() == null || response.getRankedShopIds().isEmpty()) {
+            return fallback;
+        }
+        RecommendRerankResponse normalized = normalizeRerankResponse(response, fallback, request, topN);
+        normalized.setEngine(ENGINE_LLM);
+        return normalized;
+    }
+
     public ReviewRiskCheckResponse reviewRiskCheck(ReviewRiskCheckRequest request) {
         if (request == null || !StringUtils.hasText(request.getContent())) {
             ReviewRiskCheckResponse response = new ReviewRiskCheckResponse();
+            response.setEngine(ENGINE_FALLBACK);
             response.setPass(true);
             response.setRiskLevel("SAFE");
             response.setRiskScore(0);
@@ -184,7 +224,9 @@ public class AiOrchestrationService {
         if (!isValidRiskResponse(response)) {
             return fallback;
         }
-        return normalizeRiskResponse(response, fallback);
+        ReviewRiskCheckResponse normalized = normalizeRiskResponse(response, fallback);
+        normalized.setEngine(ENGINE_LLM);
+        return normalized;
     }
 
     private ChunkSummaryResponse fallbackChunkSummary(ChunkSummaryRequest request) {
@@ -233,6 +275,7 @@ public class AiOrchestrationService {
         unique = cleanPointList(unique, 3);
 
         ChunkSummaryResponse response = new ChunkSummaryResponse();
+        response.setEngine(ENGINE_FALLBACK);
         response.setSummary("本组高频口碑：" + String.join("；", high.isEmpty() ? Collections.singletonList("信息不足") : high));
         response.setHighFrequencyPoints(high);
         response.setUniquePoints(unique);
@@ -257,6 +300,7 @@ public class AiOrchestrationService {
         unique = cleanPointList(unique, 6);
 
         FinalSummaryResponse response = new FinalSummaryResponse();
+        response.setEngine(ENGINE_FALLBACK);
         String shopName = request == null ? "该店铺" : request.getShopName();
         String summary = shopName + "整体口碑集中在：" + String.join("；", high);
         if (SUMMARY_NOISE_PATTERN.matcher(summary).find()) {
@@ -300,6 +344,216 @@ public class AiOrchestrationService {
         RecommendReasonResponse response = new RecommendReasonResponse();
         response.setReasonByShopId(map);
         return response;
+    }
+
+    private RecommendRerankResponse fallbackRerank(RecommendRerankRequest request, int topN) {
+        String query = Optional.ofNullable(request.getQuery()).orElse("");
+        String lower = query.toLowerCase(Locale.ROOT);
+        List<String> includeKeywords = mergeDistinct(
+                safeStrList(request.getIncludeKeywords()),
+                mergeDistinct(extractTokens(query), inferIncludeKeywords(query))
+        );
+        List<String> excludeKeywords = mergeDistinct(
+                safeStrList(request.getExcludeKeywords()),
+                inferExcludeKeywords(query)
+        );
+
+        Map<Long, Integer> scoreById = new LinkedHashMap<>();
+        Map<Long, Integer> includeHitById = new HashMap<>();
+        Map<Long, Integer> excludeHitById = new HashMap<>();
+        for (RecommendRerankShop shop : request.getShops()) {
+            if (shop.getId() == null) {
+                continue;
+            }
+            String searchable = buildRerankSearchable(shop);
+            String searchableLower = searchable.toLowerCase(Locale.ROOT);
+            int includeHit = countKeywordHit(searchableLower, includeKeywords);
+            int excludeHit = countKeywordHit(searchableLower, excludeKeywords);
+            includeHitById.put(shop.getId(), includeHit);
+            excludeHitById.put(shop.getId(), excludeHit);
+
+            double score = shop.getBaseRankScore() == null ? 0D : shop.getBaseRankScore();
+            score += includeHit * 2.4D;
+            score -= excludeHit * 5.2D;
+
+            if (containsAnyKeyword(lower, Arrays.asList("便宜", "平价"))) {
+                if (shop.getAvgPrice() != null && shop.getAvgPrice() <= 80) {
+                    score += 1.8D;
+                } else if (shop.getAvgPrice() != null && shop.getAvgPrice() >= 140) {
+                    score -= 1.4D;
+                }
+            }
+            if (containsAnyKeyword(lower, Arrays.asList("烧烤", "烤肉", "烤串"))) {
+                if (containsAnyKeyword(searchableLower, Arrays.asList("烧烤", "烤肉", "烤串", "串"))) {
+                    score += 2.2D;
+                } else {
+                    score -= 2.2D;
+                }
+            }
+            if (containsAnyKeyword(lower, Arrays.asList("肠胃", "清淡", "吃素", "不想吃肉", "不吃肉", "没胃口"))) {
+                if (containsAnyKeyword(searchableLower, Arrays.asList("火锅", "烤肉", "烧烤", "牛肉", "羊肉", "肉"))) {
+                    score -= 8.0D;
+                } else if (containsAnyKeyword(searchableLower, Arrays.asList("清淡", "轻食", "粥", "汤", "素食", "蔬菜"))) {
+                    score += 2.0D;
+                }
+            }
+            if (shop.getDistance() != null) {
+                score += Math.max(0D, (5000D - shop.getDistance()) / 1200D);
+            }
+            int normalizedScore = clampScore((int) Math.round(50 + score * 6));
+            scoreById.put(shop.getId(), normalizedScore);
+        }
+
+        List<RecommendRerankShop> sorted = new ArrayList<>(request.getShops());
+        sorted.sort((a, b) -> {
+            int sa = scoreById.getOrDefault(a.getId(), 0);
+            int sb = scoreById.getOrDefault(b.getId(), 0);
+            int cmp = Integer.compare(sb, sa);
+            if (cmp != 0) {
+                return cmp;
+            }
+            return Double.compare(a.getDistance() == null ? 999999D : a.getDistance(), b.getDistance() == null ? 999999D : b.getDistance());
+        });
+
+        List<Long> ranked = sorted.stream()
+                .map(RecommendRerankShop::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .limit(topN)
+                .collect(Collectors.toList());
+        Map<String, String> reasonById = new LinkedHashMap<>();
+        Map<String, Integer> scoreMap = new LinkedHashMap<>();
+        for (RecommendRerankShop shop : sorted) {
+            if (shop.getId() == null || !ranked.contains(shop.getId())) {
+                continue;
+            }
+            int score = scoreById.getOrDefault(shop.getId(), 0);
+            reasonById.put(String.valueOf(shop.getId()), buildFallbackRerankReason(
+                    query, shop, includeHitById.getOrDefault(shop.getId(), 0), excludeHitById.getOrDefault(shop.getId(), 0), score
+            ));
+            scoreMap.put(String.valueOf(shop.getId()), score);
+        }
+
+        RecommendRerankResponse response = new RecommendRerankResponse();
+        response.setEngine(ENGINE_FALLBACK);
+        response.setRankedShopIds(ranked);
+        response.setReasonByShopId(reasonById);
+        response.setScoreByShopId(scoreMap);
+        return response;
+    }
+
+    private RecommendRerankResponse normalizeRerankResponse(RecommendRerankResponse response,
+                                                            RecommendRerankResponse fallback,
+                                                            RecommendRerankRequest request,
+                                                            int topN) {
+        Set<Long> validIds = request.getShops().stream()
+                .map(RecommendRerankShop::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        List<Long> ranked = new ArrayList<>(topN);
+        Set<Long> used = new HashSet<>();
+        for (Long id : response.getRankedShopIds()) {
+            if (id == null || used.contains(id) || !validIds.contains(id)) {
+                continue;
+            }
+            ranked.add(id);
+            used.add(id);
+            if (ranked.size() >= topN) {
+                break;
+            }
+        }
+        if (ranked.isEmpty()) {
+            return fallback;
+        }
+        if (ranked.size() < topN && fallback.getRankedShopIds() != null) {
+            for (Long id : fallback.getRankedShopIds()) {
+                if (id == null || used.contains(id) || !validIds.contains(id)) {
+                    continue;
+                }
+                ranked.add(id);
+                used.add(id);
+                if (ranked.size() >= topN) {
+                    break;
+                }
+            }
+        }
+
+        Map<String, String> reasonById = response.getReasonByShopId() == null
+                ? new LinkedHashMap<>()
+                : new LinkedHashMap<>(response.getReasonByShopId());
+        Map<String, Integer> scoreById = response.getScoreByShopId() == null
+                ? new LinkedHashMap<>()
+                : new LinkedHashMap<>(response.getScoreByShopId());
+        for (Long id : ranked) {
+            String key = String.valueOf(id);
+            if (!StringUtils.hasText(reasonById.get(key)) && fallback.getReasonByShopId() != null) {
+                reasonById.put(key, fallback.getReasonByShopId().get(key));
+            }
+            if (!scoreById.containsKey(key) && fallback.getScoreByShopId() != null) {
+                scoreById.put(key, fallback.getScoreByShopId().getOrDefault(key, 60));
+            }
+        }
+
+        RecommendRerankResponse normalized = new RecommendRerankResponse();
+        normalized.setEngine(ENGINE_LLM);
+        normalized.setRankedShopIds(ranked);
+        normalized.setReasonByShopId(reasonById);
+        normalized.setScoreByShopId(scoreById);
+        return normalized;
+    }
+
+    private String buildFallbackRerankReason(String query, RecommendRerankShop shop, int includeHit, int excludeHit, int score) {
+        StringBuilder reason = new StringBuilder();
+        if (shop.getDistance() != null) {
+            reason.append(shop.getDistance() < 1000
+                    ? String.format(Locale.ROOT, "距离%.0fm", shop.getDistance())
+                    : String.format(Locale.ROOT, "距离%.1fkm", shop.getDistance() / 1000D));
+        } else {
+            reason.append("距离未知");
+        }
+        if (shop.getAvgPrice() != null) {
+            reason.append("，人均约").append(shop.getAvgPrice()).append("元");
+        }
+        reason.append("，匹配点").append(includeHit).append("项");
+        if (excludeHit > 0) {
+            reason.append("（存在").append(excludeHit).append("项冲突已降权）");
+        }
+        reason.append("，综合匹配分").append(score).append("。");
+        if (StringUtils.hasText(shop.getShopDesc())) {
+            reason.append("店铺信息：").append(sanitize(shop.getShopDesc()));
+        }
+        if (StringUtils.hasText(query)) {
+            reason.append("。与“").append(sanitize(query)).append("”较匹配。");
+        }
+        return reason.toString();
+    }
+
+    private String buildRerankSearchable(RecommendRerankShop shop) {
+        return sanitize(String.join(" ",
+                Optional.ofNullable(shop.getName()).orElse(""),
+                Optional.ofNullable(shop.getTypeName()).orElse(""),
+                Optional.ofNullable(shop.getAddress()).orElse(""),
+                Optional.ofNullable(shop.getShopDesc()).orElse("")));
+    }
+
+    private int countKeywordHit(String text, List<String> keywords) {
+        if (!StringUtils.hasText(text) || keywords == null || keywords.isEmpty()) {
+            return 0;
+        }
+        int hit = 0;
+        for (String keyword : keywords) {
+            if (!StringUtils.hasText(keyword)) {
+                continue;
+            }
+            String token = keyword.trim().toLowerCase(Locale.ROOT);
+            if (token.length() < 2 && !Arrays.asList("肉", "辣", "酸", "甜", "茶", "水").contains(token)) {
+                continue;
+            }
+            if (text.contains(token)) {
+                hit++;
+            }
+        }
+        return hit;
     }
 
     private ReviewRiskCheckResponse fallbackRiskCheck(ReviewRiskCheckRequest request) {
@@ -349,6 +603,7 @@ public class AiOrchestrationService {
 
         score = clampScore(score);
         ReviewRiskCheckResponse response = new ReviewRiskCheckResponse();
+        response.setEngine(ENGINE_FALLBACK);
         response.setRiskScore(score);
         if (score >= 45 || hasStrictBlockTag(tags)) {
             response.setPass(false);
@@ -425,6 +680,22 @@ public class AiOrchestrationService {
         return shops.stream()
                 .map(shop -> "{id=" + shop.getId() + ",name=" + shop.getName() + ",distance=" + shop.getDistance()
                         + ",score=" + shop.getScore() + ",avg=" + shop.getAvgPrice() + ",desc=" + sanitize(shop.getShopDesc()) + "}")
+                .collect(Collectors.joining(","));
+    }
+
+    private String toCompactRerankShops(List<RecommendRerankShop> shops) {
+        return shops.stream()
+                .limit(40)
+                .map(shop -> "{id=" + shop.getId()
+                        + ",name=" + sanitize(shop.getName())
+                        + ",type=" + sanitize(shop.getTypeName())
+                        + ",distance=" + shop.getDistance()
+                        + ",score=" + shop.getScore()
+                        + ",comments=" + shop.getComments()
+                        + ",avg=" + shop.getAvgPrice()
+                        + ",base=" + shop.getBaseRankScore()
+                        + ",desc=" + sanitize(shop.getShopDesc())
+                        + "}")
                 .collect(Collectors.joining(","));
     }
 
@@ -690,5 +961,9 @@ public class AiOrchestrationService {
             }
         }
         return false;
+    }
+
+    private List<String> safeStrList(List<String> list) {
+        return list == null ? Collections.emptyList() : list;
     }
 }

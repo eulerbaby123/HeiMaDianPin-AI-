@@ -41,6 +41,11 @@ public class AiRemoteClientImpl implements AiRemoteClient {
     }
 
     @Override
+    public RecommendRerankResponse recommendRerank(RecommendRerankRequest request) {
+        return post("/internal/ai/recommend/rerank", request, RecommendRerankResponse.class);
+    }
+
+    @Override
     public ReviewRiskCheckResponse reviewRiskCheck(ReviewRiskCheckRequest request) {
         return post("/internal/ai/review/risk-check", request, ReviewRiskCheckResponse.class);
     }

@@ -6,9 +6,9 @@ import java.util.List;
 
 @Data
 public class FinalSummaryResponse {
+    private String engine;
     private String summary;
     private String advice;
     private List<String> highFrequencyPoints;
     private List<String> uniquePoints;
 }
-

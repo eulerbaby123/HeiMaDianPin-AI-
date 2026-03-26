@@ -11,5 +11,7 @@ public interface AiRemoteClient {
 
     RecommendReasonResponse recommendReason(RecommendReasonRequest request);
 
+    RecommendRerankResponse recommendRerank(RecommendRerankRequest request);
+
     ReviewRiskCheckResponse reviewRiskCheck(ReviewRiskCheckRequest request);
 }

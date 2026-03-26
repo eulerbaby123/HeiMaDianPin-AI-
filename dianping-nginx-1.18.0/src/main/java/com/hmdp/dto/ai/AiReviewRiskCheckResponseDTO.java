@@ -6,6 +6,7 @@ import java.util.List;
 
 @Data
 public class AiReviewRiskCheckResponseDTO {
+    private String engine;
     private Boolean pass;
     private String riskLevel;
     private Integer riskScore;
