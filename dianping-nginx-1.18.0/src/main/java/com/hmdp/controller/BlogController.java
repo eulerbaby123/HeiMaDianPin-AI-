@@ -53,7 +53,7 @@ public class BlogController {
         Object riskData = riskResult.getData();
         if (riskData instanceof AiReviewRiskCheckResponseDTO) {
             AiReviewRiskCheckResponseDTO riskResp = (AiReviewRiskCheckResponseDTO) riskData;
-            if (Boolean.FALSE.equals(riskResp.getPass())) {
+            if (shouldBlockByRisk(riskResp)) {
                 return Result.fail(buildRiskBlockMessage(riskResp));
             }
         }
@@ -133,5 +133,32 @@ public class BlogController {
         }
         String suggestion = StrUtil.blankToDefault(riskResp.getSuggestion(), "内容触发风控，请调整后再发布。");
         return "内容触发AI风控" + tags + "，" + suggestion;
+    }
+
+    private boolean shouldBlockByRisk(AiReviewRiskCheckResponseDTO riskResp) {
+        if (riskResp == null) {
+            return false;
+        }
+        if (Boolean.FALSE.equals(riskResp.getPass())) {
+            return true;
+        }
+        String level = StrUtil.blankToDefault(riskResp.getRiskLevel(), "SAFE").toUpperCase();
+        if ("BLOCK".equals(level) || "REVIEW".equals(level)) {
+            return true;
+        }
+        if (riskResp.getRiskScore() != null && riskResp.getRiskScore() >= 45) {
+            return true;
+        }
+        if (riskResp.getRiskTags() != null) {
+            for (String tag : riskResp.getRiskTags()) {
+                if (StrUtil.isBlank(tag)) {
+                    continue;
+                }
+                if (StrUtil.equalsAnyIgnoreCase(tag.trim(), "广告引流", "联系方式", "违法违禁", "隐私泄露", "人身攻击")) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

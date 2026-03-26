@@ -48,6 +48,33 @@ public class AiServiceImpl implements IAiService {
 
     private static final ExecutorService WARMUP_EXECUTOR = Executors.newFixedThreadPool(4);
     private static final Pattern SPLIT_PATTERN = Pattern.compile("[,，。！？!?.;；\\n\\r]");
+    private static final Pattern BLOG_TITLE_NOISE_PATTERN = Pattern.compile("(?i)^AI探店-\\d+-\\d+.*");
+    private static final Pattern SUMMARY_NOISE_PATTERN = Pattern.compile("(?i)(AI探店-\\d+-\\d+|AI样本店-\\d+-\\d+)");
+    private static final Pattern PHONE_PATTERN = Pattern.compile("(?<!\\d)1\\d{10}(?!\\d)");
+    private static final Pattern ID_CARD_PATTERN = Pattern.compile("(?<!\\d)\\d{17}[0-9Xx](?!\\d)");
+    private static final int REVIEW_BLOCK_SCORE = 45;
+
+    private static final Set<String> STRICT_BLOCK_RISK_TAGS = new HashSet<>(Arrays.asList(
+            "违法违禁", "广告引流", "联系方式", "隐私泄露", "人身攻击"
+    ));
+    private static final Set<String> SUMMARY_STOP_PHRASES = new HashSet<>(Arrays.asList(
+            "本次重点关注了环境、服务、出品稳定性",
+            "整体体验比预期稳定",
+            "服务节奏比较顺畅",
+            "环境对聊天和休息很友好",
+            "出品速度在高峰期也还可以",
+            "二次复购意愿较高",
+            "高频信息不足",
+            "信息量不足，建议补充更多探店内容"
+    ));
+    private static final List<String> TOKEN_LEXICON = Arrays.asList(
+            "火锅", "烧烤", "烤肉", "串串", "麻辣烫", "烤鱼", "羊肉", "牛肉", "海鲜",
+            "水果", "果茶", "果汁", "甜品", "奶茶", "咖啡", "茶饮", "喝茶", "热水", "饮用水", "矿泉水",
+            "休息", "空调", "座位", "安静", "聊天", "办公",
+            "清淡", "少油", "少辣", "养胃", "粥", "汤", "轻食", "素食", "不吃肉", "不想吃肉",
+            "感冒", "没胃口", "便宜", "平价", "高端", "约会",
+            "亲子", "健身", "按摩", "SPA", "酒吧", "KTV", "轰趴", "美甲", "美睫", "美发"
+    );
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
@@ -145,24 +172,58 @@ public class AiServiceImpl implements IAiService {
         }
 
         List<ShopType> allTypes = shopTypeService.query().orderByAsc("sort").list();
+        if (CollUtil.isEmpty(allTypes)) {
+            return Result.fail("店铺类型数据为空");
+        }
+        Map<Long, String> typeNameById = allTypes.stream()
+                .filter(t -> t.getId() != null)
+                .collect(Collectors.toMap(ShopType::getId, t -> StrUtil.blankToDefault(t.getName(), ""), (a, b) -> a, LinkedHashMap::new));
+
         IntentParseResponse intent = parseIntentWithFallback(requestDTO.getQuery(), allTypes);
-        List<Long> typeIds = resolveTypeIds(intent, requestDTO.getCurrentTypeId(), allTypes);
+        List<Long> typeIds = resolveTypeIds(intent, requestDTO.getCurrentTypeId(), allTypes, requestDTO.getQuery());
         List<CandidateShop> candidates = findCandidates(typeIds, requestDTO.getX(), requestDTO.getY());
+        for (CandidateShop candidate : candidates) {
+            candidate.typeName = StrUtil.blankToDefault(typeNameById.get(candidate.shop.getTypeId()), "");
+        }
 
         List<String> includeKeywords = mergeKeywords(intent, requestDTO.getQuery());
+        List<String> excludeKeywords = mergeExcludeKeywords(intent, requestDTO.getQuery());
         for (CandidateShop candidate : candidates) {
-            candidate.rankScore = calcRankScore(candidate, includeKeywords, requestDTO.getQuery());
+            candidate.rankScore = calcRankScore(candidate, includeKeywords, excludeKeywords, requestDTO.getQuery());
         }
-        candidates.sort((a, b) -> {
+        boolean strictNeedMatch = shouldStrictRequireMatch(requestDTO.getQuery(), includeKeywords);
+        List<CandidateShop> filteredCandidates = candidates.stream()
+                .filter(candidate -> !shouldFilterOutCandidate(candidate, strictNeedMatch))
+                .collect(Collectors.toList());
+        if (CollUtil.isEmpty(filteredCandidates)) {
+            filteredCandidates = candidates.stream()
+                    .filter(candidate -> candidate.excludeHitCount <= 0)
+                    .collect(Collectors.toList());
+        }
+        if (CollUtil.isEmpty(filteredCandidates)) {
+            filteredCandidates = candidates;
+        }
+
+        filteredCandidates.sort((a, b) -> {
             int scoreComp = Double.compare(b.rankScore, a.rankScore);
             if (scoreComp != 0) {
                 return scoreComp;
             }
+            int includeComp = Integer.compare(b.includeHitCount, a.includeHitCount);
+            if (includeComp != 0) {
+                return includeComp;
+            }
+            int excludeComp = Integer.compare(a.excludeHitCount, b.excludeHitCount);
+            if (excludeComp != 0) {
+                return excludeComp;
+            }
             return Double.compare(safeDistance(a.distance), safeDistance(b.distance));
         });
 
-        int topN = Math.min(aiProperties.getAssistantTopN(), candidates.size());
-        List<CandidateShop> topCandidates = candidates.subList(0, topN);
+        int topN = Math.min(aiProperties.getAssistantTopN(), filteredCandidates.size());
+        List<CandidateShop> topCandidates = topN <= 0
+                ? Collections.emptyList()
+                : filteredCandidates.subList(0, topN);
 
         List<AiRecommendShopDTO> recommendShops = topCandidates.stream()
                 .map(this::toRecommendShopDTO)
@@ -272,16 +333,26 @@ public class AiServiceImpl implements IAiService {
         if (CollUtil.isEmpty(finalSummary.getUniquePoints())) {
             finalSummary.setUniquePoints(uniqueHighlights);
         }
+        List<String> normalizedHigh = normalizePointList(finalSummary.getHighFrequencyPoints(), 6);
+        List<String> normalizedUnique = normalizePointList(finalSummary.getUniquePoints(), 6);
+        if (CollUtil.isEmpty(normalizedHigh)) {
+            normalizedHigh = normalizePointList(highFrequency, 6);
+        }
+        if (CollUtil.isEmpty(normalizedUnique)) {
+            normalizedUnique = normalizePointList(uniqueHighlights, 6);
+        }
+        String finalSummaryText = sanitizeSummaryText(finalSummary.getSummary(), shop.getName(), normalizedHigh, normalizedUnique);
+        String adviceText = StrUtil.blankToDefault(finalSummary.getAdvice(), "建议优先参考高频口碑，再结合距离、评分、人均消费综合判断。");
 
         AiShopSummaryDTO summaryDTO = new AiShopSummaryDTO();
         summaryDTO.setShopId(shop.getId());
         summaryDTO.setShopName(shop.getName());
         summaryDTO.setReviewCount(blogs.size());
         summaryDTO.setChunkCount(groupedBlogs.size());
-        summaryDTO.setFinalSummary(finalSummary.getSummary());
-        summaryDTO.setAdvice(finalSummary.getAdvice());
-        summaryDTO.setHighFrequencyHighlights(finalSummary.getHighFrequencyPoints());
-        summaryDTO.setUniqueHighlights(finalSummary.getUniquePoints());
+        summaryDTO.setFinalSummary(finalSummaryText);
+        summaryDTO.setAdvice(adviceText);
+        summaryDTO.setHighFrequencyHighlights(normalizedHigh);
+        summaryDTO.setUniqueHighlights(normalizedUnique);
         summaryDTO.setGeneratedAt(LocalDateTime.now().toString());
         summaryDTO.setFingerprint(fingerprint);
         summaryDTO.setFromCache(false);
@@ -298,7 +369,7 @@ public class AiServiceImpl implements IAiService {
         List<ReviewSnippet> snippets = blogs.stream().map(blog -> {
             ReviewSnippet snippet = new ReviewSnippet();
             snippet.setBlogId(blog.getId());
-            snippet.setTitle(sanitizeText(blog.getTitle()));
+            snippet.setTitle(sanitizeBlogTitleForSummary(blog.getTitle()));
             snippet.setContent(sanitizeText(blog.getContent()));
             snippet.setLiked(blog.getLiked());
             snippet.setCreateTime(blog.getCreateTime() == null ? "" : blog.getCreateTime().toString());
@@ -384,27 +455,23 @@ public class AiServiceImpl implements IAiService {
     }
 
     private IntentParseResponse localIntentParse(String query) {
-        String lower = query.toLowerCase(Locale.ROOT);
-        List<String> typeKeywords = new ArrayList<>();
-        if (lower.contains("火锅")) typeKeywords.add("火锅");
-        if (lower.contains("烧烤")) typeKeywords.add("烧烤");
-        if (lower.contains("奶茶") || lower.contains("饮品")) typeKeywords.add("茶");
-        if (lower.contains("咖啡")) typeKeywords.add("咖啡");
-        if (lower.contains("日料") || lower.contains("寿司")) typeKeywords.add("日");
-        if (lower.contains("海鲜")) typeKeywords.add("海鲜");
-        if (lower.contains("ktv") || lower.contains("唱歌")) typeKeywords.add("KTV");
+        List<String> typeKeywords = inferTypeKeywords(query);
+        List<String> includeKeywords = mergeDistinct(extractQueryTokens(query), inferIncludeKeywords(query));
+        List<String> excludeKeywords = inferExcludeKeywords(query);
 
         IntentParseResponse response = new IntentParseResponse();
-        response.setIntentSummary("基于用户描述推荐附近可能匹配的店铺");
+        response.setIntentSummary("基于用户需求筛选附近更匹配的店铺");
         response.setTypeKeywords(typeKeywords);
-        response.setIncludeKeywords(extractQueryTokens(query));
-        response.setExcludeKeywords(Collections.emptyList());
+        response.setIncludeKeywords(includeKeywords);
+        response.setExcludeKeywords(excludeKeywords);
         return response;
     }
 
-    private List<Long> resolveTypeIds(IntentParseResponse intent, Long currentTypeId, List<ShopType> allTypes) {
+    private List<Long> resolveTypeIds(IntentParseResponse intent, Long currentTypeId, List<ShopType> allTypes, String query) {
         LinkedHashSet<Long> result = new LinkedHashSet<>();
-        List<String> typeKeywords = intent.getTypeKeywords();
+        List<String> typeKeywords = new ArrayList<>();
+        typeKeywords.addAll(safeList(intent.getTypeKeywords()));
+        typeKeywords.addAll(inferTypeKeywords(query));
         if (CollUtil.isNotEmpty(typeKeywords)) {
             for (String keyword : typeKeywords) {
                 if (StrUtil.isBlank(keyword)) {
@@ -417,12 +484,14 @@ public class AiServiceImpl implements IAiService {
                 }
             }
         }
-        if (result.isEmpty() && currentTypeId != null && currentTypeId > 0) {
+        if (result.isEmpty() && currentTypeId != null && currentTypeId > 0 && !hasCrossTypeIntent(query)) {
             result.add(currentTypeId);
         }
         if (result.isEmpty()) {
-            for (int i = 0; i < Math.min(3, allTypes.size()); i++) {
-                result.add(allTypes.get(i).getId());
+            for (ShopType type : allTypes) {
+                if (type.getId() != null) {
+                    result.add(type.getId());
+                }
             }
         }
         return new ArrayList<>(result);
@@ -498,7 +567,7 @@ public class AiServiceImpl implements IAiService {
         return candidates;
     }
 
-    private double calcRankScore(CandidateShop candidate, List<String> includeKeywords, String query) {
+    private double calcRankScore(CandidateShop candidate, List<String> includeKeywords, List<String> excludeKeywords, String query) {
         Shop shop = candidate.shop;
         double score = 0D;
         score += safeInt(shop.getScore()) / 10.0D * 2.0D;
@@ -508,11 +577,23 @@ public class AiServiceImpl implements IAiService {
             score += Math.max(0D, (aiProperties.getAssistantRadiusMeters() - candidate.distance) / 1000D);
         }
 
-        String searchable = joinSearchable(shop.getName(), shop.getAddress(), shop.getShopDesc());
-        for (String keyword : includeKeywords) {
-            if (StrUtil.isNotBlank(keyword) && StrUtil.containsIgnoreCase(searchable, keyword)) {
-                score += 0.6D;
-            }
+        String searchable = buildCandidateSearchable(candidate);
+        int includeHit = countKeywordHits(searchable, includeKeywords);
+        int excludeHit = countKeywordHits(searchable, excludeKeywords);
+        candidate.includeHitCount = includeHit;
+        candidate.excludeHitCount = excludeHit;
+        score += includeHit * 2.4D;
+        score -= excludeHit * 4.5D;
+
+        if (isNoMeatIntent(query) && containsAnyKeyword(searchable, Arrays.asList("火锅", "烧烤", "烤肉", "牛", "羊", "串"))) {
+            score -= 12D;
+        }
+        if (containsAnyKeyword(query, Arrays.asList("水果", "果茶", "买水", "喝茶")) && containsAnyKeyword(searchable, Arrays.asList("茶", "水果", "果", "饮水", "热水", "休息"))) {
+            score += 1.5D;
+        }
+        if (containsAnyKeyword(query, Arrays.asList("清淡", "感冒", "没胃口", "养胃", "粥", "汤"))
+                && containsAnyKeyword(searchable, Arrays.asList("清淡", "轻食", "粥", "汤", "热水"))) {
+            score += 1.8D;
         }
 
         if (query.contains("便宜") || query.contains("平价")) {
@@ -525,7 +606,185 @@ public class AiServiceImpl implements IAiService {
                 score += 0.8D;
             }
         }
+        score += queryDiversityBoost(query, shop.getId());
         return score;
+    }
+
+    private String buildCandidateSearchable(CandidateShop candidate) {
+        return joinSearchable(candidate.shop.getName(), candidate.shop.getAddress(), candidate.shop.getShopDesc(), candidate.typeName);
+    }
+
+    private int countKeywordHits(String searchable, List<String> keywords) {
+        if (StrUtil.isBlank(searchable) || CollUtil.isEmpty(keywords)) {
+            return 0;
+        }
+        int hit = 0;
+        for (String keyword : keywords) {
+            if (StrUtil.isBlank(keyword)) {
+                continue;
+            }
+            String k = keyword.trim();
+            if (k.length() < 2 && !Arrays.asList("肉", "辣", "酸", "甜", "茶", "水").contains(k)) {
+                continue;
+            }
+            if (StrUtil.containsIgnoreCase(searchable, k)) {
+                hit++;
+            }
+        }
+        return hit;
+    }
+
+    private boolean shouldStrictRequireMatch(String query, List<String> includeKeywords) {
+        if (CollUtil.isEmpty(includeKeywords)) {
+            return false;
+        }
+        String lower = StrUtil.blankToDefault(query, "").toLowerCase(Locale.ROOT);
+        return containsAny(lower, "想吃", "想喝", "不想", "不要", "不吃", "感冒", "没胃口", "清淡", "水果", "喝茶", "买水", "休息");
+    }
+
+    private boolean shouldFilterOutCandidate(CandidateShop candidate, boolean strictNeedMatch) {
+        if (candidate == null) {
+            return true;
+        }
+        if (candidate.excludeHitCount > 0) {
+            return true;
+        }
+        return strictNeedMatch && candidate.includeHitCount <= 0;
+    }
+
+    private boolean hasCrossTypeIntent(String query) {
+        String lower = StrUtil.blankToDefault(query, "").toLowerCase(Locale.ROOT);
+        return containsAny(lower, "水果", "喝茶", "买水", "休息", "不想吃肉", "清淡", "感冒", "没胃口");
+    }
+
+    private List<String> inferTypeKeywords(String query) {
+        String lower = StrUtil.blankToDefault(query, "").toLowerCase(Locale.ROOT);
+        LinkedHashSet<String> keywords = new LinkedHashSet<>();
+        if (containsAny(lower, "火锅", "烧烤", "烤肉", "清淡", "水果", "奶茶", "咖啡", "粥", "汤", "寿司", "日料", "海鲜")) {
+            keywords.add("美食");
+        }
+        if (containsAny(lower, "ktv", "唱歌")) {
+            keywords.add("KTV");
+        }
+        if (containsAny(lower, "美发", "剪发", "发型")) {
+            keywords.add("美发");
+        }
+        if (containsAny(lower, "美甲", "美睫")) {
+            keywords.add("美甲");
+            keywords.add("美睫");
+        }
+        if (containsAny(lower, "按摩", "足疗")) {
+            keywords.add("按摩");
+            keywords.add("足疗");
+        }
+        if (containsAny(lower, "spa", "美容")) {
+            keywords.add("SPA");
+            keywords.add("美容");
+        }
+        if (containsAny(lower, "亲子", "遛娃")) {
+            keywords.add("亲子");
+        }
+        if (containsAny(lower, "酒吧", "喝酒", "微醺")) {
+            keywords.add("酒吧");
+        }
+        if (containsAny(lower, "轰趴", "聚会包场")) {
+            keywords.add("轰趴");
+        }
+        if (containsAny(lower, "健身", "训练")) {
+            keywords.add("健身");
+        }
+        return new ArrayList<>(keywords);
+    }
+
+    private List<String> inferIncludeKeywords(String query) {
+        String lower = StrUtil.blankToDefault(query, "").toLowerCase(Locale.ROOT);
+        LinkedHashSet<String> include = new LinkedHashSet<>();
+        if (containsAny(lower, "水果", "果茶", "果汁")) {
+            include.addAll(Arrays.asList("水果", "果汁", "果茶", "甜品", "轻食"));
+        }
+        if (containsAny(lower, "喝茶", "茶饮", "休息")) {
+            include.addAll(Arrays.asList("茶", "茶饮", "休息", "座位", "空调"));
+        }
+        if (containsAny(lower, "买水", "买瓶水", "饮用水")) {
+            include.addAll(Arrays.asList("饮用水", "热水", "补给", "便利"));
+        }
+        if (containsAny(lower, "感冒", "没胃口", "清淡", "养胃")) {
+            include.addAll(Arrays.asList("清淡", "粥", "汤", "轻食", "热水"));
+        }
+        if (containsAny(lower, "不想吃肉", "不吃肉", "素食", "少肉")) {
+            include.addAll(Arrays.asList("素食", "清淡", "轻食", "蔬菜"));
+        }
+        return new ArrayList<>(include);
+    }
+
+    private List<String> inferExcludeKeywords(String query) {
+        String lower = StrUtil.blankToDefault(query, "").toLowerCase(Locale.ROOT);
+        LinkedHashSet<String> exclude = new LinkedHashSet<>();
+        if (containsAny(lower, "不想吃肉", "不吃肉", "少肉", "素食")) {
+            exclude.addAll(Arrays.asList("火锅", "烧烤", "烤肉", "羊肉", "牛肉", "肉", "串"));
+        }
+        if (containsAny(lower, "清淡", "感冒", "没胃口")) {
+            exclude.addAll(Arrays.asList("火锅", "烧烤", "重辣", "重油"));
+        }
+        if (containsAny(lower, "不喝酒", "戒酒", "不想喝酒")) {
+            exclude.addAll(Arrays.asList("酒吧", "酒精"));
+        }
+        return new ArrayList<>(exclude);
+    }
+
+    private List<String> mergeExcludeKeywords(IntentParseResponse intent, String query) {
+        LinkedHashSet<String> set = new LinkedHashSet<>();
+        for (String keyword : safeList(intent.getExcludeKeywords())) {
+            if (StrUtil.isNotBlank(keyword)) {
+                set.add(keyword.trim());
+            }
+        }
+        set.addAll(inferExcludeKeywords(query));
+        return new ArrayList<>(set);
+    }
+
+    private List<String> mergeDistinct(List<String> first, List<String> second) {
+        LinkedHashSet<String> set = new LinkedHashSet<>();
+        for (String keyword : safeList(first)) {
+            if (StrUtil.isNotBlank(keyword)) {
+                set.add(keyword.trim());
+            }
+        }
+        for (String keyword : safeList(second)) {
+            if (StrUtil.isNotBlank(keyword)) {
+                set.add(keyword.trim());
+            }
+        }
+        return new ArrayList<>(set);
+    }
+
+    private boolean containsAnyKeyword(String text, Collection<String> keywords) {
+        if (StrUtil.isBlank(text) || CollUtil.isEmpty(keywords)) {
+            return false;
+        }
+        for (String keyword : keywords) {
+            if (StrUtil.isBlank(keyword)) {
+                continue;
+            }
+            if (StrUtil.containsIgnoreCase(text, keyword.trim())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isNoMeatIntent(String query) {
+        String lower = StrUtil.blankToDefault(query, "").toLowerCase(Locale.ROOT);
+        return containsAny(lower, "不想吃肉", "不吃肉", "少肉", "素食");
+    }
+
+    private double queryDiversityBoost(String query, Long shopId) {
+        if (shopId == null) {
+            return 0D;
+        }
+        String hash = SecureUtil.md5(StrUtil.blankToDefault(query, "") + "|" + shopId);
+        int bucket = Integer.parseInt(hash.substring(0, 2), 16);
+        return bucket / 255.0D * 0.12D;
     }
 
     private AiRecommendShopDTO toRecommendShopDTO(CandidateShop candidate) {
@@ -679,7 +938,7 @@ public class AiServiceImpl implements IAiService {
         List<SentenceSample> samples = new ArrayList<>();
         for (Blog blog : blogs) {
             int weight = safeInt(blog.getLiked()) + 1;
-            String combined = sanitizeText(blog.getTitle()) + "。 " + sanitizeText(blog.getContent());
+            String combined = sanitizeText(blog.getContent());
             String[] parts = SPLIT_PATTERN.split(combined);
             for (String part : parts) {
                 String text = StrUtil.trim(part);
@@ -732,15 +991,24 @@ public class AiServiceImpl implements IAiService {
         if (StrUtil.isBlank(text)) {
             return Collections.emptyList();
         }
+        String lower = text.toLowerCase(Locale.ROOT);
+        LinkedHashSet<String> tokens = new LinkedHashSet<>();
+        for (String lexicon : TOKEN_LEXICON) {
+            if (lower.contains(lexicon.toLowerCase(Locale.ROOT))) {
+                tokens.add(lexicon);
+            }
+        }
         String normalized = text.replaceAll("[,，。！？!?.;；/\\\\]", " ");
         String[] arr = normalized.split("\\s+");
-        LinkedHashSet<String> tokens = new LinkedHashSet<>();
         for (String token : arr) {
             String t = StrUtil.trim(token);
             if (StrUtil.isBlank(t) || t.length() < 2) {
                 continue;
             }
             tokens.add(t);
+        }
+        if (containsAny(lower, "不想", "不要", "不吃", "别")) {
+            tokens.addAll(inferExcludeKeywords(text));
         }
         if (tokens.isEmpty() && text.length() >= 2) {
             tokens.add(text.trim());
@@ -776,12 +1044,12 @@ public class AiServiceImpl implements IAiService {
     }
 
     private String buildAssistantCacheId(AiAssistantRequestDTO requestDTO) {
-        String raw = requestDTO.getQuery() + "|" + requestDTO.getX() + "|" + requestDTO.getY() + "|" + requestDTO.getCurrentTypeId();
+        String raw = "v2|" + requestDTO.getQuery() + "|" + requestDTO.getX() + "|" + requestDTO.getY() + "|" + requestDTO.getCurrentTypeId();
         return SecureUtil.md5(raw);
     }
 
     private String buildReviewRiskCacheId(AiReviewRiskCheckRequestDTO requestDTO) {
-        String raw = StrUtil.blankToDefault(requestDTO.getScene(), "BLOG_NOTE")
+        String raw = "v2|" + StrUtil.blankToDefault(requestDTO.getScene(), "BLOG_NOTE")
                 + "|" + requestDTO.getShopId()
                 + "|" + StrUtil.blankToDefault(requestDTO.getTitle(), "")
                 + "|" + requestDTO.getContent();
@@ -794,11 +1062,30 @@ public class AiServiceImpl implements IAiService {
             return null;
         }
         try {
-            return JSONUtil.toBean(cached, AiShopSummaryDTO.class);
+            AiShopSummaryDTO summaryDTO = JSONUtil.toBean(cached, AiShopSummaryDTO.class);
+            normalizeCachedSummary(summaryDTO);
+            return summaryDTO;
         } catch (Exception e) {
             log.warn("parse shop summary cache failed, key={}, err={}", summaryKey, e.getMessage());
             return null;
         }
+    }
+
+    private void normalizeCachedSummary(AiShopSummaryDTO summaryDTO) {
+        if (summaryDTO == null) {
+            return;
+        }
+        List<String> high = normalizePointList(summaryDTO.getHighFrequencyHighlights(), 6);
+        List<String> unique = normalizePointList(summaryDTO.getUniqueHighlights(), 6);
+        summaryDTO.setHighFrequencyHighlights(high);
+        summaryDTO.setUniqueHighlights(unique);
+        summaryDTO.setFinalSummary(sanitizeSummaryText(
+                summaryDTO.getFinalSummary(),
+                StrUtil.blankToDefault(summaryDTO.getShopName(), "该店铺"),
+                high,
+                unique
+        ));
+        summaryDTO.setAdvice(StrUtil.blankToDefault(summaryDTO.getAdvice(), "建议优先参考高频口碑，再结合距离、评分、人均消费综合判断。"));
     }
 
     private ChunkSummaryResponse readChunkSummary(String chunkKey) {
@@ -895,7 +1182,7 @@ public class AiServiceImpl implements IAiService {
             if (p.length() > 60) {
                 p = p.substring(0, 60);
             }
-            if (StrUtil.isNotBlank(p)) {
+            if (isMeaningfulSummaryPoint(p)) {
                 set.add(p);
             }
             if (set.size() >= maxSize) {
@@ -903,6 +1190,51 @@ public class AiServiceImpl implements IAiService {
             }
         }
         return new ArrayList<>(set);
+    }
+
+    private boolean isMeaningfulSummaryPoint(String point) {
+        if (StrUtil.isBlank(point)) {
+            return false;
+        }
+        String p = sanitizeText(point);
+        if (p.length() < 4) {
+            return false;
+        }
+        if (SUMMARY_NOISE_PATTERN.matcher(p).find()) {
+            return false;
+        }
+        if (p.matches("^[\\d\\-_/\\s]+$")) {
+            return false;
+        }
+        for (String stop : SUMMARY_STOP_PHRASES) {
+            if (StrUtil.containsIgnoreCase(p, stop)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private String sanitizeSummaryText(String summary, String shopName, List<String> highFrequency, List<String> uniqueHighlights) {
+        String normalized = sanitizeText(summary);
+        if (StrUtil.isBlank(normalized) || SUMMARY_NOISE_PATTERN.matcher(normalized).find()) {
+            String merged = shopName + "整体口碑集中在：" + joinPoints(highFrequency, "；");
+            if (CollUtil.isNotEmpty(uniqueHighlights)) {
+                merged = merged + "。小众亮点包括：" + joinPoints(uniqueHighlights, "；");
+            }
+            return merged;
+        }
+        return normalized;
+    }
+
+    private String sanitizeBlogTitleForSummary(String title) {
+        String t = sanitizeText(title);
+        if (StrUtil.isBlank(t)) {
+            return "";
+        }
+        if (BLOG_TITLE_NOISE_PATTERN.matcher(t).matches()) {
+            return "";
+        }
+        return t;
     }
 
     private AiReviewRiskCheckResponseDTO toReviewRiskResponse(ReviewRiskCheckResponse remoteResp) {
@@ -929,36 +1261,53 @@ public class AiServiceImpl implements IAiService {
         int score = 5;
 
         if (containsAny(text, "赌博", "毒品", "枪支", "办证", "套现", "发票")) {
-            score += 75;
+            score += 80;
             tags.add("违法违禁");
             reasons.add("内容疑似包含违法违禁信息。");
         }
         if (containsAny(lower, "http://", "https://", "www.", "加微", "微信", "vx", "qq", "私聊", "引流", "推广", "代理")) {
-            score += 55;
+            score += 65;
             tags.add("广告引流");
             reasons.add("内容疑似包含广告引流信息。");
         }
-        if (text.matches(".*\\d{6,}.*") && containsAny(lower, "联系", "咨询", "加", "微信", "vx", "qq")) {
-            score += 35;
+        if ((PHONE_PATTERN.matcher(text).find() || text.matches(".*\\d{6,}.*"))
+                && containsAny(lower, "联系", "咨询", "加", "微信", "vx", "qq", "电话")) {
+            score += 55;
             tags.add("联系方式");
             reasons.add("内容疑似包含联系方式导流。");
+        }
+        if (ID_CARD_PATTERN.matcher(text).find()
+                || containsAny(lower, "身份证", "住址", "详细地址", "真实姓名", "我叫", "手机号", "电话号")) {
+            score += 60;
+            tags.add("隐私泄露");
+            reasons.add("内容疑似泄露姓名、电话、地址或证件信息。");
+        }
+        if (containsAny(lower, "傻逼", "滚", "去死", "脑残", "废物", "骗子")) {
+            score += 40;
+            tags.add("人身攻击");
+            reasons.add("内容疑似包含辱骂或攻击性表达。");
         }
         if (containsAny(text, "最便宜", "稳赚不赔", "包过", "百分百", "绝对有效")) {
             score += 20;
             tags.add("夸大营销");
             reasons.add("内容存在夸大营销表达。");
         }
+        if (containsAny(text, "！！！", "???", "￥￥￥")) {
+            score += 10;
+            tags.add("刷屏噪声");
+            reasons.add("内容疑似存在刷屏式噪声表达。");
+        }
 
         AiReviewRiskCheckResponseDTO dto = new AiReviewRiskCheckResponseDTO();
         dto.setRiskScore(clampRiskScore(score));
-        if (dto.getRiskScore() >= 70) {
+        if (dto.getRiskScore() >= REVIEW_BLOCK_SCORE || hasStrictBlockTag(tags)) {
             dto.setPass(false);
             dto.setRiskLevel("BLOCK");
-            dto.setSuggestion("内容触发高风险，请删除广告、联系方式或违法违规描述后再发布。");
-        } else if (dto.getRiskScore() >= 40) {
-            dto.setPass(true);
+            dto.setSuggestion("内容触发高风险，请删除广告、联系方式、隐私泄露或违法违规描述后再发布。");
+        } else if (dto.getRiskScore() >= 30) {
+            dto.setPass(false);
             dto.setRiskLevel("REVIEW");
-            dto.setSuggestion("内容存在一定风险，建议先优化表达再发布。");
+            dto.setSuggestion("内容存在中风险，请先按建议修改后再发布。");
         } else {
             dto.setPass(true);
             dto.setRiskLevel("SAFE");
@@ -987,9 +1336,6 @@ public class AiServiceImpl implements IAiService {
         }
         response.setRiskLevel(level);
         response.setRiskScore(clampRiskScore(response.getRiskScore()));
-        if (response.getPass() == null) {
-            response.setPass(!"BLOCK".equals(level));
-        }
         response.setRiskTags(normalizePointList(response.getRiskTags(), 4));
         if (CollUtil.isEmpty(response.getRiskTags())) {
             response.setRiskTags(Collections.singletonList("正常内容"));
@@ -1005,6 +1351,35 @@ public class AiServiceImpl implements IAiService {
         if (StrUtil.isBlank(response.getGeneratedAt())) {
             response.setGeneratedAt(LocalDateTime.now().toString());
         }
+        boolean forceBlock = "BLOCK".equals(level)
+                || response.getRiskScore() >= REVIEW_BLOCK_SCORE
+                || hasStrictBlockTag(response.getRiskTags());
+        if (forceBlock) {
+            response.setRiskLevel("BLOCK");
+            response.setPass(false);
+            response.setSuggestion("内容触发高风险，请删除广告、联系方式、隐私泄露或违法违规描述后再发布。");
+            return;
+        }
+        if ("REVIEW".equals(level)) {
+            response.setPass(false);
+        } else if (response.getPass() == null) {
+            response.setPass(true);
+        }
+    }
+
+    private boolean hasStrictBlockTag(Collection<String> tags) {
+        if (CollUtil.isEmpty(tags)) {
+            return false;
+        }
+        for (String tag : tags) {
+            if (StrUtil.isBlank(tag)) {
+                continue;
+            }
+            if (STRICT_BLOCK_RISK_TAGS.contains(tag.trim())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private int clampRiskScore(Integer score) {
@@ -1117,6 +1492,9 @@ public class AiServiceImpl implements IAiService {
         private Shop shop;
         private Double distance;
         private Double rankScore;
+        private String typeName;
+        private int includeHitCount;
+        private int excludeHitCount;
     }
 
     private static class SentenceSample {
