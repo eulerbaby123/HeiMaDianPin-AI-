@@ -9,4 +9,3 @@ public class HmdpAiServiceApplication {
         SpringApplication.run(HmdpAiServiceApplication.class, args);
     }
 }
-

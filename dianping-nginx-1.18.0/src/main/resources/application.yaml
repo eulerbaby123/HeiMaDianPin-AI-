@@ -54,3 +54,4 @@ hmdp:
     assistant-candidate-limit: 20
     assistant-top-n: 5
     assistant-ttl-minutes: 10
+    review-risk-ttl-minutes: 30

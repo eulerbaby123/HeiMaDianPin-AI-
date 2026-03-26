@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <plugins>
+    <plugin>
+      <name>GraalVM Native Maven Plugin</name>
+      <prefix>native</prefix>
+      <artifactId>native-maven-plugin</artifactId>
+    </plugin>
+  </plugins>
+</metadata>

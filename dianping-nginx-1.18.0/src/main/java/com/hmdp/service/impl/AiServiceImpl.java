@@ -13,6 +13,8 @@ import com.hmdp.dto.Result;
 import com.hmdp.dto.ai.AiAssistantRequestDTO;
 import com.hmdp.dto.ai.AiAssistantResponseDTO;
 import com.hmdp.dto.ai.AiRecommendShopDTO;
+import com.hmdp.dto.ai.AiReviewRiskCheckRequestDTO;
+import com.hmdp.dto.ai.AiReviewRiskCheckResponseDTO;
 import com.hmdp.dto.ai.AiShopSummaryDTO;
 import com.hmdp.entity.Blog;
 import com.hmdp.entity.Shop;
@@ -182,6 +184,47 @@ public class AiServiceImpl implements IAiService {
                 TimeUnit.MINUTES
         );
         return Result.ok(responseDTO);
+    }
+
+    @Override
+    public Result checkReviewRisk(AiReviewRiskCheckRequestDTO requestDTO) {
+        if (requestDTO == null || StrUtil.isBlank(requestDTO.getContent())) {
+            return Result.fail("content不能为空");
+        }
+        String cacheKey = RedisConstants.AI_REVIEW_RISK_CACHE_KEY + buildReviewRiskCacheId(requestDTO);
+        AiReviewRiskCheckResponseDTO cached = readReviewRiskCache(cacheKey);
+        if (cached != null) {
+            cached.setFromCache(true);
+            return Result.ok(cached);
+        }
+
+        ReviewRiskCheckRequest riskRequest = new ReviewRiskCheckRequest();
+        riskRequest.setScene(StrUtil.blankToDefault(requestDTO.getScene(), "BLOG_NOTE"));
+        riskRequest.setTitle(sanitizeText(requestDTO.getTitle()));
+        riskRequest.setContent(sanitizeText(requestDTO.getContent()));
+
+        if (requestDTO.getShopId() != null) {
+            Shop shop = shopService.getById(requestDTO.getShopId());
+            if (shop != null) {
+                riskRequest.setShopName(shop.getName());
+                riskRequest.setShopDesc(shop.getShopDesc());
+            }
+        }
+
+        ReviewRiskCheckResponse remoteResp = aiRemoteClient.reviewRiskCheck(riskRequest);
+        AiReviewRiskCheckResponseDTO response = toReviewRiskResponse(remoteResp);
+        if (!isValidReviewRiskResponse(response)) {
+            response = localReviewRiskFallback(requestDTO);
+        }
+        normalizeReviewRiskResponse(response);
+
+        stringRedisTemplate.opsForValue().set(
+                cacheKey,
+                JSONUtil.toJsonStr(response),
+                aiProperties.getReviewRiskTtlMinutes(),
+                TimeUnit.MINUTES
+        );
+        return Result.ok(response);
     }
 
     private AiShopSummaryDTO buildSummary(Shop shop, List<Blog> blogs, String fingerprint) {
@@ -465,7 +508,7 @@ public class AiServiceImpl implements IAiService {
             score += Math.max(0D, (aiProperties.getAssistantRadiusMeters() - candidate.distance) / 1000D);
         }
 
-        String searchable = (shop.getName() == null ? "" : shop.getName()) + " " + (shop.getAddress() == null ? "" : shop.getAddress());
+        String searchable = joinSearchable(shop.getName(), shop.getAddress(), shop.getShopDesc());
         for (String keyword : includeKeywords) {
             if (StrUtil.isNotBlank(keyword) && StrUtil.containsIgnoreCase(searchable, keyword)) {
                 score += 0.6D;
@@ -492,6 +535,7 @@ public class AiServiceImpl implements IAiService {
         dto.setTypeId(shop.getTypeId());
         dto.setName(shop.getName());
         dto.setAddress(shop.getAddress());
+        dto.setShopDesc(shop.getShopDesc());
         dto.setAvgPrice(shop.getAvgPrice());
         dto.setScore(shop.getScore());
         dto.setComments(shop.getComments());
@@ -511,6 +555,7 @@ public class AiServiceImpl implements IAiService {
             reasonShop.setId(shop.getId());
             reasonShop.setName(shop.getName());
             reasonShop.setAddress(shop.getAddress());
+            reasonShop.setShopDesc(shop.getShopDesc());
             reasonShop.setAvgPrice(shop.getAvgPrice());
             reasonShop.setScore(shop.getScore());
             reasonShop.setDistance(shop.getDistance());
@@ -537,6 +582,10 @@ public class AiServiceImpl implements IAiService {
         reason.append("评分").append(formatScore(shop.getScore())).append("，评论").append(safeInt(shop.getComments())).append("条");
         if (shop.getAvgPrice() != null) {
             reason.append("，人均约").append(shop.getAvgPrice()).append("元");
+        }
+        String descHighlight = extractShopDescHighlight(shop.getShopDesc(), query);
+        if (StrUtil.isNotBlank(descHighlight)) {
+            reason.append("。店铺信息提到：").append(descHighlight);
         }
         String highlight = readShopHighlight(shop.getId());
         if (StrUtil.isNotBlank(highlight)) {
@@ -673,6 +722,12 @@ public class AiServiceImpl implements IAiService {
         return new ArrayList<>(set);
     }
 
+    private String joinSearchable(String... parts) {
+        return Arrays.stream(parts)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.joining(" "));
+    }
+
     private List<String> extractQueryTokens(String text) {
         if (StrUtil.isBlank(text)) {
             return Collections.emptyList();
@@ -725,6 +780,14 @@ public class AiServiceImpl implements IAiService {
         return SecureUtil.md5(raw);
     }
 
+    private String buildReviewRiskCacheId(AiReviewRiskCheckRequestDTO requestDTO) {
+        String raw = StrUtil.blankToDefault(requestDTO.getScene(), "BLOG_NOTE")
+                + "|" + requestDTO.getShopId()
+                + "|" + StrUtil.blankToDefault(requestDTO.getTitle(), "")
+                + "|" + requestDTO.getContent();
+        return SecureUtil.md5(raw);
+    }
+
     private AiShopSummaryDTO readSummary(String summaryKey) {
         String cached = stringRedisTemplate.opsForValue().get(summaryKey);
         if (StrUtil.isBlank(cached)) {
@@ -764,6 +827,19 @@ public class AiServiceImpl implements IAiService {
         }
     }
 
+    private AiReviewRiskCheckResponseDTO readReviewRiskCache(String cacheKey) {
+        String cached = stringRedisTemplate.opsForValue().get(cacheKey);
+        if (StrUtil.isBlank(cached)) {
+            return null;
+        }
+        try {
+            return JSONUtil.toBean(cached, AiReviewRiskCheckResponseDTO.class);
+        } catch (Exception e) {
+            log.warn("parse review risk cache failed, key={}, err={}", cacheKey, e.getMessage());
+            return null;
+        }
+    }
+
     private boolean tryLock(String key, long seconds) {
         Boolean success = stringRedisTemplate.opsForValue().setIfAbsent(key, "1", seconds, TimeUnit.SECONDS);
         return BooleanUtil.isTrue(success);
@@ -788,6 +864,12 @@ public class AiServiceImpl implements IAiService {
 
     private boolean isValidIntent(IntentParseResponse response) {
         return response != null && (StrUtil.isNotBlank(response.getIntentSummary()) || CollUtil.isNotEmpty(response.getTypeKeywords()));
+    }
+
+    private boolean isValidReviewRiskResponse(AiReviewRiskCheckResponseDTO response) {
+        return response != null
+                && StrUtil.isNotBlank(response.getRiskLevel())
+                && response.getRiskScore() != null;
     }
 
     private void normalizeChunkSummary(ChunkSummaryResponse response) {
@@ -821,6 +903,162 @@ public class AiServiceImpl implements IAiService {
             }
         }
         return new ArrayList<>(set);
+    }
+
+    private AiReviewRiskCheckResponseDTO toReviewRiskResponse(ReviewRiskCheckResponse remoteResp) {
+        if (remoteResp == null) {
+            return null;
+        }
+        AiReviewRiskCheckResponseDTO dto = new AiReviewRiskCheckResponseDTO();
+        dto.setPass(remoteResp.getPass());
+        dto.setRiskLevel(remoteResp.getRiskLevel());
+        dto.setRiskScore(remoteResp.getRiskScore());
+        dto.setRiskTags(remoteResp.getRiskTags());
+        dto.setReasons(remoteResp.getReasons());
+        dto.setSuggestion(remoteResp.getSuggestion());
+        dto.setFromCache(false);
+        dto.setGeneratedAt(LocalDateTime.now().toString());
+        return dto;
+    }
+
+    private AiReviewRiskCheckResponseDTO localReviewRiskFallback(AiReviewRiskCheckRequestDTO requestDTO) {
+        String text = sanitizeText(StrUtil.blankToDefault(requestDTO.getTitle(), "") + " " + requestDTO.getContent());
+        String lower = text.toLowerCase(Locale.ROOT);
+        List<String> tags = new ArrayList<>();
+        List<String> reasons = new ArrayList<>();
+        int score = 5;
+
+        if (containsAny(text, "赌博", "毒品", "枪支", "办证", "套现", "发票")) {
+            score += 75;
+            tags.add("违法违禁");
+            reasons.add("内容疑似包含违法违禁信息。");
+        }
+        if (containsAny(lower, "http://", "https://", "www.", "加微", "微信", "vx", "qq", "私聊", "引流", "推广", "代理")) {
+            score += 55;
+            tags.add("广告引流");
+            reasons.add("内容疑似包含广告引流信息。");
+        }
+        if (text.matches(".*\\d{6,}.*") && containsAny(lower, "联系", "咨询", "加", "微信", "vx", "qq")) {
+            score += 35;
+            tags.add("联系方式");
+            reasons.add("内容疑似包含联系方式导流。");
+        }
+        if (containsAny(text, "最便宜", "稳赚不赔", "包过", "百分百", "绝对有效")) {
+            score += 20;
+            tags.add("夸大营销");
+            reasons.add("内容存在夸大营销表达。");
+        }
+
+        AiReviewRiskCheckResponseDTO dto = new AiReviewRiskCheckResponseDTO();
+        dto.setRiskScore(clampRiskScore(score));
+        if (dto.getRiskScore() >= 70) {
+            dto.setPass(false);
+            dto.setRiskLevel("BLOCK");
+            dto.setSuggestion("内容触发高风险，请删除广告、联系方式或违法违规描述后再发布。");
+        } else if (dto.getRiskScore() >= 40) {
+            dto.setPass(true);
+            dto.setRiskLevel("REVIEW");
+            dto.setSuggestion("内容存在一定风险，建议先优化表达再发布。");
+        } else {
+            dto.setPass(true);
+            dto.setRiskLevel("SAFE");
+            dto.setSuggestion("内容质检通过，可正常发布。");
+        }
+        if (tags.isEmpty()) {
+            tags.add("正常内容");
+        }
+        if (reasons.isEmpty()) {
+            reasons.add("未发现明显违规特征。");
+        }
+        dto.setRiskTags(tags.stream().distinct().limit(4).collect(Collectors.toList()));
+        dto.setReasons(reasons.stream().distinct().limit(4).collect(Collectors.toList()));
+        dto.setFromCache(false);
+        dto.setGeneratedAt(LocalDateTime.now().toString());
+        return dto;
+    }
+
+    private void normalizeReviewRiskResponse(AiReviewRiskCheckResponseDTO response) {
+        if (response == null) {
+            return;
+        }
+        String level = StrUtil.blankToDefault(response.getRiskLevel(), "REVIEW").toUpperCase(Locale.ROOT);
+        if (!Arrays.asList("SAFE", "REVIEW", "BLOCK").contains(level)) {
+            level = "REVIEW";
+        }
+        response.setRiskLevel(level);
+        response.setRiskScore(clampRiskScore(response.getRiskScore()));
+        if (response.getPass() == null) {
+            response.setPass(!"BLOCK".equals(level));
+        }
+        response.setRiskTags(normalizePointList(response.getRiskTags(), 4));
+        if (CollUtil.isEmpty(response.getRiskTags())) {
+            response.setRiskTags(Collections.singletonList("正常内容"));
+        }
+        response.setReasons(normalizePointList(response.getReasons(), 4));
+        if (CollUtil.isEmpty(response.getReasons())) {
+            response.setReasons(Collections.singletonList("未发现明显违规特征。"));
+        }
+        response.setSuggestion(StrUtil.blankToDefault(response.getSuggestion(), "建议根据风险提示调整文本后再发布。"));
+        if (response.getFromCache() == null) {
+            response.setFromCache(false);
+        }
+        if (StrUtil.isBlank(response.getGeneratedAt())) {
+            response.setGeneratedAt(LocalDateTime.now().toString());
+        }
+    }
+
+    private int clampRiskScore(Integer score) {
+        int val = score == null ? 0 : score;
+        if (val < 0) {
+            return 0;
+        }
+        return Math.min(val, 100);
+    }
+
+    private boolean containsAny(String text, String... keywords) {
+        if (StrUtil.isBlank(text)) {
+            return false;
+        }
+        for (String keyword : keywords) {
+            if (text.contains(keyword)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String extractShopDescHighlight(String shopDesc, String query) {
+        if (StrUtil.isBlank(shopDesc)) {
+            return null;
+        }
+        List<String> tokens = extractQueryTokens(query);
+        String cleanDesc = sanitizeText(shopDesc);
+        for (String token : tokens) {
+            if (StrUtil.containsIgnoreCase(cleanDesc, token)) {
+                return trimHighlight(cleanDesc, token, 50);
+            }
+        }
+        return cleanDesc.length() > 40 ? cleanDesc.substring(0, 40) + "..." : cleanDesc;
+    }
+
+    private String trimHighlight(String text, String keyword, int maxLen) {
+        if (StrUtil.isBlank(text)) {
+            return "";
+        }
+        int idx = text.toLowerCase(Locale.ROOT).indexOf(keyword.toLowerCase(Locale.ROOT));
+        if (idx < 0 || text.length() <= maxLen) {
+            return text.length() > maxLen ? text.substring(0, maxLen) + "..." : text;
+        }
+        int start = Math.max(0, idx - 12);
+        int end = Math.min(text.length(), start + maxLen);
+        String sub = text.substring(start, end);
+        if (start > 0) {
+            sub = "..." + sub;
+        }
+        if (end < text.length()) {
+            sub = sub + "...";
+        }
+        return sub;
     }
 
     private AiShopSummaryDTO emptySummary(Long shopId, String shopName) {

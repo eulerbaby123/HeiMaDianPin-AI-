@@ -27,4 +27,5 @@ public class RedisConstants {
     public static final String AI_SHOP_SUMMARY_CHUNK_KEY = "ai:shop:summary:chunk:";
     public static final String LOCK_AI_SHOP_SUMMARY_KEY = "lock:ai:shop:summary:";
     public static final String AI_ASSISTANT_CACHE_KEY = "ai:assistant:rec:";
+    public static final String AI_REVIEW_RISK_CACHE_KEY = "ai:review:risk:";
 }

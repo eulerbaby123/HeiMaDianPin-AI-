@@ -94,6 +94,11 @@ public class Shop implements Serializable {
     private String openHours;
 
     /**
+     * 商铺简介，便于AI结合经营内容和服务信息做推荐
+     */
+    private String shopDesc;
+
+    /**
      * 创建时间
      */
     private LocalDateTime createTime;

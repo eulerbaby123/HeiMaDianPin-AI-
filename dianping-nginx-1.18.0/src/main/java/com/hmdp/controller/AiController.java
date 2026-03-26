@@ -2,6 +2,7 @@ package com.hmdp.controller;
 
 import com.hmdp.dto.Result;
 import com.hmdp.dto.ai.AiAssistantRequestDTO;
+import com.hmdp.dto.ai.AiReviewRiskCheckRequestDTO;
 import com.hmdp.service.IAiService;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,5 +30,9 @@ public class AiController {
     public Result assistantRecommend(@RequestBody AiAssistantRequestDTO requestDTO) {
         return aiService.assistantRecommend(requestDTO);
     }
-}
 
+    @PostMapping("/review/risk-check")
+    public Result checkReviewRisk(@RequestBody AiReviewRiskCheckRequestDTO requestDTO) {
+        return aiService.checkReviewRisk(requestDTO);
+    }
+}

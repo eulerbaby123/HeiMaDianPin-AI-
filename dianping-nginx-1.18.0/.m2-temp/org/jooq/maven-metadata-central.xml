@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <plugins>
+    <plugin>
+      <name>jOOQ Codegen Maven</name>
+      <prefix>jooq-codegen</prefix>
+      <artifactId>jooq-codegen-maven</artifactId>
+    </plugin>
+    <plugin>
+      <name>jOOQ Migrations Maven</name>
+      <prefix>jooq-migrations</prefix>
+      <artifactId>jooq-migrations-maven</artifactId>
+    </plugin>
+  </plugins>
+</metadata>

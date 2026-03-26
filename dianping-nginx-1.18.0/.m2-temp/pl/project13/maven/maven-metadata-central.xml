@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <plugins>
+    <plugin>
+      <name>Git Commit Id Maven Plugin</name>
+      <prefix>git-commit-id</prefix>
+      <artifactId>git-commit-id-plugin</artifactId>
+    </plugin>
+  </plugins>
+</metadata>

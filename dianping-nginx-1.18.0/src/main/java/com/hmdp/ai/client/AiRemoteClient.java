@@ -10,5 +10,6 @@ public interface AiRemoteClient {
     IntentParseResponse parseIntent(IntentParseRequest request);
 
     RecommendReasonResponse recommendReason(RecommendReasonRequest request);
-}
 
+    ReviewRiskCheckResponse reviewRiskCheck(ReviewRiskCheckRequest request);
+}

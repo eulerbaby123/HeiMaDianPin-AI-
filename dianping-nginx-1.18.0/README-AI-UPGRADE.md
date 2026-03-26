@@ -6,7 +6,8 @@
 
 1. 店铺探店博客智能总结（把“评论”定义为店铺探店博客 `tb_blog`）。
 2. 点评 AI 助手（5km 推荐）。
-3. Redis 预热与分组总结机制，避免每次都从头调用大模型。
+3. 点评质检与风控（发布前识别广告引流等违规文本）。
+4. Redis 预热与分组总结机制，避免每次都从头调用大模型。
 
 备注：`tb_blog_comments` 仍未启用，本次不接入评论表。
 
@@ -101,6 +102,24 @@
 5. 调用 `/internal/ai/recommend/reason` 生成推荐理由（失败走模板兜底）。
 6. 结果缓存后返回前端。
 
+说明：推荐链路已接入 `tb_shop.shop_desc`（商铺简介）作为语义匹配和理由生成上下文，可按“酸口、清淡、喝茶休息、买水补给”等需求做更细颗粒推荐。
+
+---
+
+## 4.3 点评质检与风控（P3）
+
+### 场景
+
+1. 前端发笔记页发布前先调用 AI 风控接口做预检。
+2. 后端 `POST /blog` 再做一次强校验，防止绕过前端。
+
+### 风控能力
+
+1. 广告引流与联系方式泄露识别。
+2. 违法违禁关键词识别。
+3. 夸大营销表达识别。
+4. 模型不可用时走本地规则兜底。
+
 ---
 
 ## 5. Redis 设计
@@ -139,6 +158,8 @@
 
 3. `POST /ai/assistant/recommend`  
    AI 助手推荐。
+4. `POST /ai/review/risk-check`  
+   点评质检与风控检查。
 
 示例请求：
 
@@ -157,6 +178,7 @@
 2. `POST /internal/ai/summarize/final`
 3. `POST /internal/ai/intent/parse`
 4. `POST /internal/ai/recommend/reason`
+5. `POST /internal/ai/review/risk-check`
 
 ---
 
@@ -220,4 +242,3 @@ mvn spring-boot:run
 2. 结果持久化落表（如 `tb_ai_shop_summary`）做审计与模型对比。
 3. 增量重算（只处理新增博客）。
 4. 引入向量检索做更细粒度语义召回。
-

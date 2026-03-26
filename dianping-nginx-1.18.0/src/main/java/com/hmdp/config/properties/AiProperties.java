@@ -21,5 +21,6 @@ public class AiProperties {
     private int assistantCandidateLimit = 20;
     private int assistantTopN = 5;
     private long assistantTtlMinutes = 10L;
-}
 
+    private long reviewRiskTtlMinutes = 30L;
+}

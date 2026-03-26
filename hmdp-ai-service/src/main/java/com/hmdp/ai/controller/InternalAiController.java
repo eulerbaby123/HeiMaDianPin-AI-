@@ -34,5 +34,9 @@ public class InternalAiController {
     public RecommendReasonResponse recommendReason(@RequestBody @Valid RecommendReasonRequest request) {
         return aiOrchestrationService.recommendReason(request);
     }
-}
 
+    @PostMapping("/review/risk-check")
+    public ReviewRiskCheckResponse reviewRiskCheck(@RequestBody @Valid ReviewRiskCheckRequest request) {
+        return aiOrchestrationService.reviewRiskCheck(request);
+    }
+}

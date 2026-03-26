@@ -8,6 +8,7 @@ public class AiRecommendShopDTO {
     private Long typeId;
     private String name;
     private String address;
+    private String shopDesc;
     private Long avgPrice;
     private Integer score;
     private Integer comments;
@@ -15,4 +16,3 @@ public class AiRecommendShopDTO {
     private Double distance;
     private String reason;
 }
-

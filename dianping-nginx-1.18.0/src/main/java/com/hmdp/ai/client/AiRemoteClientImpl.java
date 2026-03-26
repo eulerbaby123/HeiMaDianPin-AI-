@@ -40,6 +40,11 @@ public class AiRemoteClientImpl implements AiRemoteClient {
         return post("/internal/ai/recommend/reason", request, RecommendReasonResponse.class);
     }
 
+    @Override
+    public ReviewRiskCheckResponse reviewRiskCheck(ReviewRiskCheckRequest request) {
+        return post("/internal/ai/review/risk-check", request, ReviewRiskCheckResponse.class);
+    }
+
     private <T> T post(String path, Object req, Class<T> clazz) {
         try {
             String url = aiProperties.getBaseUrl() + path;
@@ -51,4 +56,3 @@ public class AiRemoteClientImpl implements AiRemoteClient {
         }
     }
 }
-

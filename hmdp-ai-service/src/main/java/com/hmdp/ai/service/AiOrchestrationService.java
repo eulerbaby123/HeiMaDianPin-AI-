@@ -17,6 +17,10 @@ import java.util.stream.Collectors;
 public class AiOrchestrationService {
 
     private static final Pattern SPLIT_PATTERN = Pattern.compile("[,，。！？!?.;；\\n\\r]");
+    private static final Pattern AD_LINK_PATTERN = Pattern.compile("(https?://|www\\.|加微|微信|vx|v信|QQ|扣扣|私聊|引流|代理|返利|刷单|推广|代购|点击链接|二维码)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern ILLEGAL_PATTERN = Pattern.compile("(赌博|赌钱|毒品|吸毒|枪支|办证|套现|洗钱|发票|违禁|色情)");
+    private static final Pattern EXTREME_PATTERN = Pattern.compile("(最便宜|稳赚不赔|包过|百分百|绝对有效|一夜暴富)");
+    private static final Pattern CONTACT_PATTERN = Pattern.compile("(\\d{6,}|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+)");
 
     private final ChatClient.Builder chatClientBuilder;
     private final ObjectMapper objectMapper;
@@ -24,10 +28,11 @@ public class AiOrchestrationService {
 
     public AiOrchestrationService(ChatClient.Builder chatClientBuilder,
                                   ObjectMapper objectMapper,
-                                  @Value("${spring.ai.openai.api-key:}") String apiKey) {
+                                  @Value("${spring.ai.openai.api-key:}") String openAiApiKey,
+                                  @Value("${spring.ai.dashscope.api-key:}") String dashscopeApiKey) {
         this.chatClientBuilder = chatClientBuilder;
         this.objectMapper = objectMapper;
-        this.aiEnabled = StringUtils.hasText(apiKey);
+        this.aiEnabled = StringUtils.hasText(openAiApiKey) || StringUtils.hasText(dashscopeApiKey);
     }
 
     public ChunkSummaryResponse summarizeChunk(ChunkSummaryRequest request) {
@@ -122,12 +127,44 @@ public class AiOrchestrationService {
 
         String system = "你是推荐理由生成助手。请严格输出JSON，不要输出markdown。";
         String user = "基于用户需求和候选店铺，输出JSON字段：reasonByShopId(对象，key为店铺id字符串，value为一句推荐理由)。"
-                + "用户输入：" + request.getQuery() + "；候选店铺：" + toCompactReasonShops(request.getShops());
+                + "用户输入：" + request.getQuery() + "；候选店铺（含店铺简介和服务信息）：" + toCompactReasonShops(request.getShops());
         RecommendReasonResponse response = callAiForJson(system, user, RecommendReasonResponse.class);
         if (response == null || response.getReasonByShopId() == null || response.getReasonByShopId().isEmpty()) {
             return fallbackReason(request);
         }
         return response;
+    }
+
+    public ReviewRiskCheckResponse reviewRiskCheck(ReviewRiskCheckRequest request) {
+        if (request == null || !StringUtils.hasText(request.getContent())) {
+            ReviewRiskCheckResponse response = new ReviewRiskCheckResponse();
+            response.setPass(true);
+            response.setRiskLevel("SAFE");
+            response.setRiskScore(0);
+            response.setRiskTags(Collections.singletonList("内容为空"));
+            response.setReasons(Collections.singletonList("未检测到可分析文本，默认放行。"));
+            response.setSuggestion("可补充更完整的点评内容。");
+            return response;
+        }
+
+        ReviewRiskCheckResponse fallback = fallbackRiskCheck(request);
+        if (!aiEnabled) {
+            return fallback;
+        }
+
+        String system = "你是内容风控质检助手。请严格输出JSON，不要输出markdown。";
+        String user = "请对用户点评内容做质检与风控，重点识别广告引流、联系方式泄露、违禁违法、辱骂攻击、夸大营销。"
+                + "输出JSON字段：pass(boolean),riskLevel(string:SAFE|REVIEW|BLOCK),riskScore(int 0-100),"
+                + "riskTags(string数组),reasons(string数组),suggestion(string)。"
+                + "场景：" + sanitize(request.getScene()) + "；店铺：" + sanitize(request.getShopName())
+                + "；店铺简介：" + sanitize(request.getShopDesc())
+                + "；标题：" + sanitize(request.getTitle())
+                + "；内容：" + sanitize(request.getContent());
+        ReviewRiskCheckResponse response = callAiForJson(system, user, ReviewRiskCheckResponse.class);
+        if (!isValidRiskResponse(response)) {
+            return fallback;
+        }
+        return normalizeRiskResponse(response, fallback);
     }
 
     private ChunkSummaryResponse fallbackChunkSummary(ChunkSummaryRequest request) {
@@ -231,11 +268,75 @@ public class AiOrchestrationService {
                     ? String.format(Locale.ROOT, "距离%.0fm", shop.getDistance())
                     : String.format(Locale.ROOT, "距离%.1fkm", shop.getDistance() / 1000.0D));
             String score = shop.getScore() == null ? "0.0" : String.format(Locale.ROOT, "%.1f", shop.getScore() / 10.0D);
-            String reason = distance + "，评分" + score + "，与“" + request.getQuery() + "”匹配度较高。";
+            String desc = "";
+            if (StringUtils.hasText(shop.getShopDesc())) {
+                desc = "，简介提到：" + sanitize(shop.getShopDesc());
+            }
+            String reason = distance + "，评分" + score + desc + "，与“" + request.getQuery() + "”匹配度较高。";
             map.put(String.valueOf(shop.getId()), reason);
         }
         RecommendReasonResponse response = new RecommendReasonResponse();
         response.setReasonByShopId(map);
+        return response;
+    }
+
+    private ReviewRiskCheckResponse fallbackRiskCheck(ReviewRiskCheckRequest request) {
+        String text = sanitize(Optional.ofNullable(request.getTitle()).orElse("") + " " + request.getContent());
+        String lower = text.toLowerCase(Locale.ROOT);
+        List<String> tags = new ArrayList<>();
+        List<String> reasons = new ArrayList<>();
+        int score = 5;
+
+        if (ILLEGAL_PATTERN.matcher(text).find()) {
+            score += 75;
+            tags.add("违法违禁");
+            reasons.add("文本包含疑似违法违禁关键词。");
+        }
+        if (AD_LINK_PATTERN.matcher(lower).find()) {
+            score += 55;
+            tags.add("广告引流");
+            reasons.add("文本疑似包含广告推广或引流词。");
+        }
+        if (CONTACT_PATTERN.matcher(text).find() && containsAnyKeyword(lower, Arrays.asList("联系", "咨询", "加", "vx", "微信", "qq"))) {
+            score += 35;
+            tags.add("联系方式");
+            reasons.add("文本疑似出现联系方式或导流信息。");
+        }
+        if (EXTREME_PATTERN.matcher(text).find()) {
+            score += 20;
+            tags.add("夸大营销");
+            reasons.add("文本包含夸大承诺类词汇。");
+        }
+        if (text.contains("！！！") || text.contains("???") || text.contains("￥￥￥")) {
+            score += 10;
+            tags.add("刷屏噪声");
+            reasons.add("文本疑似存在刷屏式表达。");
+        }
+
+        score = clampScore(score);
+        ReviewRiskCheckResponse response = new ReviewRiskCheckResponse();
+        response.setRiskScore(score);
+        if (score >= 70) {
+            response.setPass(false);
+            response.setRiskLevel("BLOCK");
+            response.setSuggestion("内容触发高风险，请移除广告/联系方式/违法相关描述后再发布。");
+        } else if (score >= 40) {
+            response.setPass(true);
+            response.setRiskLevel("REVIEW");
+            response.setSuggestion("内容存在一定风险，建议先修改敏感表述后再发布。");
+        } else {
+            response.setPass(true);
+            response.setRiskLevel("SAFE");
+            response.setSuggestion("内容整体正常，可发布。");
+        }
+        if (tags.isEmpty()) {
+            tags.add("正常内容");
+        }
+        if (reasons.isEmpty()) {
+            reasons.add("未发现明显违规特征。");
+        }
+        response.setRiskTags(tags.stream().distinct().limit(4).collect(Collectors.toList()));
+        response.setReasons(reasons.stream().distinct().limit(4).collect(Collectors.toList()));
         return response;
     }
 
@@ -288,7 +389,8 @@ public class AiOrchestrationService {
 
     private String toCompactReasonShops(List<RecommendReasonShop> shops) {
         return shops.stream()
-                .map(shop -> "{id=" + shop.getId() + ",name=" + shop.getName() + ",distance=" + shop.getDistance() + ",score=" + shop.getScore() + ",avg=" + shop.getAvgPrice() + "}")
+                .map(shop -> "{id=" + shop.getId() + ",name=" + shop.getName() + ",distance=" + shop.getDistance()
+                        + ",score=" + shop.getScore() + ",avg=" + shop.getAvgPrice() + ",desc=" + sanitize(shop.getShopDesc()) + "}")
                 .collect(Collectors.joining(","));
     }
 
@@ -303,6 +405,38 @@ public class AiOrchestrationService {
     private boolean isValidChunkResponse(ChunkSummaryResponse response) {
         return response != null && (StringUtils.hasText(response.getSummary())
                 || (response.getHighFrequencyPoints() != null && !response.getHighFrequencyPoints().isEmpty()));
+    }
+
+    private boolean isValidRiskResponse(ReviewRiskCheckResponse response) {
+        return response != null
+                && StringUtils.hasText(response.getRiskLevel())
+                && response.getRiskScore() != null;
+    }
+
+    private ReviewRiskCheckResponse normalizeRiskResponse(ReviewRiskCheckResponse response, ReviewRiskCheckResponse fallback) {
+        String level = Optional.ofNullable(response.getRiskLevel()).orElse("REVIEW").toUpperCase(Locale.ROOT);
+        if (!"SAFE".equals(level) && !"REVIEW".equals(level) && !"BLOCK".equals(level)) {
+            level = Optional.ofNullable(fallback.getRiskLevel()).orElse("REVIEW");
+        }
+        response.setRiskLevel(level);
+        response.setRiskScore(clampScore(response.getRiskScore()));
+        if (response.getPass() == null) {
+            response.setPass(!"BLOCK".equals(level));
+        }
+        if (response.getRiskTags() == null || response.getRiskTags().isEmpty()) {
+            response.setRiskTags(fallback.getRiskTags());
+        } else {
+            response.setRiskTags(response.getRiskTags().stream().filter(StringUtils::hasText).distinct().limit(4).collect(Collectors.toList()));
+        }
+        if (response.getReasons() == null || response.getReasons().isEmpty()) {
+            response.setReasons(fallback.getReasons());
+        } else {
+            response.setReasons(response.getReasons().stream().filter(StringUtils::hasText).distinct().limit(4).collect(Collectors.toList()));
+        }
+        if (!StringUtils.hasText(response.getSuggestion())) {
+            response.setSuggestion(fallback.getSuggestion());
+        }
+        return response;
     }
 
     private String sanitize(String text) {
@@ -333,5 +467,21 @@ public class AiOrchestrationService {
         }
         return new ArrayList<>(tokens);
     }
-}
 
+    private int clampScore(Integer score) {
+        int safeScore = score == null ? 0 : score;
+        if (safeScore < 0) {
+            return 0;
+        }
+        return Math.min(safeScore, 100);
+    }
+
+    private boolean containsAnyKeyword(String text, List<String> keywords) {
+        for (String keyword : keywords) {
+            if (text.contains(keyword)) {
+                return true;
+            }
+        }
+        return false;
+    }
+}

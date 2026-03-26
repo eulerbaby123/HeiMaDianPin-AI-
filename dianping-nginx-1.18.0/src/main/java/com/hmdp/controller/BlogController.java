@@ -1,11 +1,15 @@
 package com.hmdp.controller;
 
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
+import com.hmdp.dto.ai.AiReviewRiskCheckRequestDTO;
+import com.hmdp.dto.ai.AiReviewRiskCheckResponseDTO;
 import com.hmdp.entity.Blog;
 import com.hmdp.entity.User;
+import com.hmdp.service.IAiService;
 import com.hmdp.service.IBlogService;
 import com.hmdp.service.IUserService;
 import com.hmdp.utils.SystemConstants;
@@ -14,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -30,10 +35,28 @@ public class BlogController {
     @Resource
     private IBlogService blogService;
     @Resource
+    private IAiService aiService;
+    @Resource
     private IUserService userService;
 
     @PostMapping
     public Result saveBlog(@RequestBody Blog blog) {
+        AiReviewRiskCheckRequestDTO riskRequestDTO = new AiReviewRiskCheckRequestDTO();
+        riskRequestDTO.setScene("BLOG_NOTE");
+        riskRequestDTO.setTitle(blog.getTitle());
+        riskRequestDTO.setContent(blog.getContent());
+        riskRequestDTO.setShopId(blog.getShopId());
+        Result riskResult = aiService.checkReviewRisk(riskRequestDTO);
+        if (!Boolean.TRUE.equals(riskResult.getSuccess())) {
+            return riskResult;
+        }
+        Object riskData = riskResult.getData();
+        if (riskData instanceof AiReviewRiskCheckResponseDTO) {
+            AiReviewRiskCheckResponseDTO riskResp = (AiReviewRiskCheckResponseDTO) riskData;
+            if (Boolean.FALSE.equals(riskResp.getPass())) {
+                return Result.fail(buildRiskBlockMessage(riskResp));
+            }
+        }
        return blogService.saveBlog(blog);
     }
 
@@ -98,5 +121,17 @@ public class BlogController {
             @RequestParam(value = "offset",defaultValue = "0") Integer offset){
         return blogService.queryBlogOfFollow(max,offset);
 
+    }
+
+    private String buildRiskBlockMessage(AiReviewRiskCheckResponseDTO riskResp) {
+        String tags = "";
+        if (riskResp.getRiskTags() != null && !riskResp.getRiskTags().isEmpty()) {
+            tags = "（" + riskResp.getRiskTags().stream()
+                    .filter(StrUtil::isNotBlank)
+                    .limit(3)
+                    .collect(Collectors.joining("、")) + "）";
+        }
+        String suggestion = StrUtil.blankToDefault(riskResp.getSuggestion(), "内容触发风控，请调整后再发布。");
+        return "内容触发AI风控" + tags + "，" + suggestion;
     }
 }

@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>mojo-parent</artifactId>
+    <version>94</version>
+  </parent>
+
+  <artifactId>exec-maven-plugin</artifactId>
+  <version>3.6.1</version>
+  <packaging>maven-plugin</packaging>
+
+  <name>Exec Maven Plugin</name>
+  <description>A plugin to allow execution of system and Java programs</description>
+  <url>https://www.mojohaus.org/exec-maven-plugin</url>
+  <inceptionYear>2005</inceptionYear>
+
+  <licenses>
+    <license>
+      <name>Apache License 2</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>jerome</id>
+      <name>Jerome Lacoste</name>
+      <email>jerome@coffeebreaks.org</email>
+      <organization>CoffeeBreaks</organization>
+      <organizationUrl>http://www.coffeebreaks.org</organizationUrl>
+      <roles>
+        <role>Java Developer</role>
+      </roles>
+      <timezone>+1</timezone>
+    </developer>
+    <developer>
+      <id>kaare</id>
+      <name>Kaare Nilsen</name>
+      <email>kaare.nilsen@gmail.com</email>
+      <organization>Objectware</organization>
+      <organizationUrl>http://www.objectware.no</organizationUrl>
+      <roles>
+        <role>Java Developer</role>
+      </roles>
+      <timezone>+1</timezone>
+    </developer>
+    <developer>
+      <id>rfscholte</id>
+      <name>Robert Scholte</name>
+      <email>rfscholte@apache.org</email>
+      <timezone>Europe/Amsterdam</timezone>
+    </developer>
+    <developer>
+      <id>khmarbaise</id>
+      <name>Karl Heinz Marbaise</name>
+      <email>khmarbaise@apache.org</email>
+      <timezone>Europe/Berlin</timezone>
+    </developer>
+    <developer>
+      <id>sjaranowski</id>
+      <name>Slawomir Jaranowski</name>
+      <email>sjaranowski@apache.org</email>
+      <timezone>Europe/Warsaw</timezone>
+    </developer>
+    <developer>
+      <id>bmarwell</id>
+      <name>Benjamin Marwell</name>
+      <email>bmarwell@apache.org</email>
+      <timezone>Europe/Berlin</timezone>
+    </developer>
+  </developers>
+
+  <contributors>
+    <contributor>
+      <name>David Smiley</name>
+      <email>protected</email>
+      <roles>
+        <role>Patch Contributor</role>
+      </roles>
+    </contributor>
+    <contributor>
+      <name>Milos Kleint</name>
+      <email>protected</email>
+      <roles>
+        <role>Patch Contributor</role>
+      </roles>
+    </contributor>
+    <contributor>
+      <name>Markus KARG</name>
+      <email>markus@headcrashing.eu</email>
+      <organization>Head Crashing Informatics</organization>
+      <organizationUrl>http://www.headcrashing.eu</organizationUrl>
+      <roles>
+        <role>Patch Contributor</role>
+      </roles>
+      <timezone>Europe/Berlin</timezone>
+    </contributor>
+    <contributor>
+      <name>Alexander Kriegisch</name>
+      <email>protected</email>
+      <organization>Scrum-Master.de - Agiles Projektmanagement</organization>
+      <organizationUrl>https://scrum-master.de</organizationUrl>
+      <roles>
+        <role>Feature Contributor</role>
+      </roles>
+    </contributor>
+    <contributor>
+      <name>Adam Retter</name>
+      <email>adam@evolvedbinary.com</email>
+      <organization>Evolved Binary</organization>
+      <organizationUrl>https://www.evolvedbinary.com</organizationUrl>
+      <roles>
+        <role>Patch Contributor</role>
+      </roles>
+      <timezone>Europe/London</timezone>
+    </contributor>
+  </contributors>
+
+  <prerequisites>
+    <maven>3.6.3</maven>
+  </prerequisites>
+
+  <scm>
+    <connection>scm:git:https://github.com/mojohaus/exec-maven-plugin.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/mojohaus/exec-maven-plugin.git</developerConnection>
+    <tag>3.6.1</tag>
+    <url>https://github.com/mojohaus/exec-maven-plugin/tree/master</url>
+  </scm>
+
+  <properties>
+    <mavenVersion>3.9.11</mavenVersion>
+    <minimalMavenBuildVersion>3.6.3</minimalMavenBuildVersion>
+    <slf4j.version>1.7.36</slf4j.version>
+    <asm.version>9.8</asm.version>
+    <invoker.parallelThreads>1C</invoker.parallelThreads>
+    <project.build.outputTimestamp>2025-10-05T19:10:01Z</project.build.outputTimestamp>
+    <maven-toolchains-plugin.version>3.2.0</maven-toolchains-plugin.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>javax.inject</groupId>
+      <artifactId>javax.inject</artifactId>
+      <version>1</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-model</artifactId>
+      <version>${mavenVersion}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-artifact</artifactId>
+      <version>${mavenVersion}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-core</artifactId>
+      <version>${mavenVersion}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-plugin-api</artifactId>
+      <version>${mavenVersion}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.maven.resolver</groupId>
+      <artifactId>maven-resolver-util</artifactId>
+      <!-- bound version with used Maven -->
+      <version>1.9.24</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.codehaus.plexus</groupId>
+      <artifactId>plexus-utils</artifactId>
+      <version>4.0.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.plexus</groupId>
+      <artifactId>plexus-xml</artifactId>
+      <version>3.0.1</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.maven.plugin-tools</groupId>
+      <artifactId>maven-plugin-annotations</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-exec</artifactId>
+      <version>1.5.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.ow2.asm</groupId>
+      <artifactId>asm</artifactId>
+      <version>${asm.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.ow2.asm</groupId>
+      <artifactId>asm-commons</artifactId>
+      <version>${asm.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven.plugin-testing</groupId>
+      <artifactId>maven-plugin-testing-harness</artifactId>
+      <version>3.3.0</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.codehaus.plexus</groupId>
+          <artifactId>plexus-container-default</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-compat</artifactId>
+      <version>${mavenVersion}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>4.11.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>${slf4j.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <!-- TODO move to parent ... -->
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-toolchains-plugin</artifactId>
+          <version>${maven-toolchains-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <configuration>
+            <detectLinks>false</detectLinks>
+            <detectJavaApiLink>false</detectJavaApiLink>
+            <detectOfflineLinks>false</detectOfflineLinks>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <configuration>
+            <rerunFailingTestsCount>2</rerunFailingTestsCount>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <proc>none</proc>
+        </configuration>
+        <executions>
+          <execution>
+            <id>default-testCompile</id>
+            <goals>
+              <goal>testCompile</goal>
+            </goals>
+            <phase>test-compile</phase>
+            <configuration>
+              <parameters>true</parameters>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>animal-sniffer-maven-plugin</artifactId>
+        <configuration>
+          <signature>
+            <groupId>org.codehaus.mojo.signature</groupId>
+            <artifactId>java18</artifactId>
+            <version>1.0</version>
+          </signature>
+          <ignores>
+            <ignore>java.lang.invoke.MethodHandle</ignore>
+          </ignores>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-test-deps</id>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <phase>generate-test-resources</phase>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.slf4j</groupId>
+                  <artifactId>slf4j-api</artifactId>
+                  <version>${slf4j.version}</version>
+                  <type>jar</type>
+                  <overWrite>false</overWrite>
+                  <destFileName>slf4j-api.jar</destFileName>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.slf4j</groupId>
+                  <artifactId>slf4j-simple</artifactId>
+                  <version>${slf4j.version}</version>
+                  <type>jar</type>
+                  <overWrite>false</overWrite>
+                  <destFileName>slf4j-simple.jar</destFileName>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.slf4j</groupId>
+                  <artifactId>slf4j-jdk14</artifactId>
+                  <version>${slf4j.version}</version>
+                  <type>jar</type>
+                  <overWrite>false</overWrite>
+                  <destFileName>slf4j-jdk14.jar</destFileName>
+                </artifactItem>
+              </artifactItems>
+              <outputDirectory>${project.build.directory}/test-dependencies/</outputDirectory>
+              <overWriteReleases>false</overWriteReleases>
+              <overWriteSnapshots>true</overWriteSnapshots>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.eclipse.sisu</groupId>
+        <artifactId>sisu-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <!-- workaround for concurrent access to local repository on Windows -->
+      <!-- https://issues.apache.org/jira/browse/MRESOLVER-372 -->
+      <id>windows</id>
+      <activation>
+        <os>
+          <family>windows</family>
+        </os>
+      </activation>
+      <properties>
+        <invoker.parallelThreads>1</invoker.parallelThreads>
+      </properties>
+    </profile>
+    <profile>
+      <id>run-its</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-invoker-plugin</artifactId>
+            <configuration>
+              <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
+              <projectsDirectory>src/it/projects</projectsDirectory>
+              <showErrors>true</showErrors>
+              <showVersion>true</showVersion>
+              <preBuildHookScript>setup</preBuildHookScript>
+              <postBuildHookScript>verify</postBuildHookScript>
+              <settingsFile>src/it/settings.xml</settingsFile>
+              <properties>
+                <maven.compiler.source>${mojo.java.target}</maven.compiler.source>
+                <maven.compiler.target>${mojo.java.target}</maven.compiler.target>
+              </properties>
+              <scriptVariables>
+                <projectVersion>${project.version}</projectVersion>
+              </scriptVariables>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>install</goal>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <artifactId>maven-enforcer-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>enforce-JAVA_HOME-is-set</id>
+                <goals>
+                  <goal>enforce</goal>
+                </goals>
+                <configuration>
+                  <rules>
+                    <requireEnvironmentVariable>
+                      <variableName>JAVA_HOME</variableName>
+                    </requireEnvironmentVariable>
+                  </rules>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>

@@ -1,0 +1,15 @@
+com\hmdp\ai\HmdpAiServiceApplication.class
+com\hmdp\ai\controller\InternalAiController.class
+com\hmdp\ai\dto\ChunkSummaryResponse.class
+com\hmdp\ai\dto\IntentParseRequest.class
+com\hmdp\ai\service\AiOrchestrationService.class
+com\hmdp\ai\dto\IntentParseResponse.class
+com\hmdp\ai\dto\RecommendReasonShop.class
+com\hmdp\ai\dto\ChunkSummaryRequest.class
+com\hmdp\ai\dto\FinalSummaryResponse.class
+com\hmdp\ai\dto\RecommendReasonRequest.class
+com\hmdp\ai\dto\ReviewRiskCheckRequest.class
+com\hmdp\ai\dto\ReviewSnippet.class
+com\hmdp\ai\dto\ReviewRiskCheckResponse.class
+com\hmdp\ai\dto\RecommendReasonResponse.class
+com\hmdp\ai\dto\FinalSummaryRequest.class
