@@ -1312,6 +1312,8 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- Open source AI demo dataset
 -- ============================
 
+DELETE FROM `tb_user` WHERE `id` BETWEEN 9009 AND 9020;
+
 INSERT INTO `tb_user` (`id`, `phone`, `password`, `nick_name`, `icon`, `create_time`, `update_time`) VALUES
 (9001, '19990000001', '', 'ai_seed_user_01', '', NOW(), NOW()),
 (9002, '19990000002', '', 'ai_seed_user_02', '', NOW(), NOW()),
@@ -1320,19 +1322,7 @@ INSERT INTO `tb_user` (`id`, `phone`, `password`, `nick_name`, `icon`, `create_t
 (9005, '19990000005', '', 'ai_seed_user_05', '', NOW(), NOW()),
 (9006, '19990000006', '', 'ai_seed_user_06', '', NOW(), NOW()),
 (9007, '19990000007', '', 'ai_seed_user_07', '', NOW(), NOW()),
-(9008, '19990000008', '', 'ai_seed_user_08', '', NOW(), NOW()),
-(9009, '19990000009', '', 'ai_seed_user_09', '', NOW(), NOW()),
-(9010, '19990000010', '', 'ai_seed_user_10', '', NOW(), NOW()),
-(9011, '19990000011', '', 'ai_seed_user_11', '', NOW(), NOW()),
-(9012, '19990000012', '', 'ai_seed_user_12', '', NOW(), NOW()),
-(9013, '19990000013', '', 'ai_seed_user_13', '', NOW(), NOW()),
-(9014, '19990000014', '', 'ai_seed_user_14', '', NOW(), NOW()),
-(9015, '19990000015', '', 'ai_seed_user_15', '', NOW(), NOW()),
-(9016, '19990000016', '', 'ai_seed_user_16', '', NOW(), NOW()),
-(9017, '19990000017', '', 'ai_seed_user_17', '', NOW(), NOW()),
-(9018, '19990000018', '', 'ai_seed_user_18', '', NOW(), NOW()),
-(9019, '19990000019', '', 'ai_seed_user_19', '', NOW(), NOW()),
-(9020, '19990000020', '', 'ai_seed_user_20', '', NOW(), NOW())
+(9008, '19990000008', '', 'ai_seed_user_08', '', NOW(), NOW())
 ON DUPLICATE KEY UPDATE `nick_name` = VALUES(`nick_name`), `update_time` = VALUES(`update_time`);
 
 DROP TEMPORARY TABLE IF EXISTS `tmp_ai_food_shop_seed`;
@@ -1471,11 +1461,11 @@ BEGIN
       DELETE FROM `tb_blog` WHERE `shop_id` = v_shop_id AND `title` LIKE CONCAT('AI探店-', v_shop_id, '-%');
     END IF;
 
-    SET v_blog_count = 5 + MOD(v_seq, 11);
+    SET v_blog_count = 14 + MOD(v_seq, 9);
     SET v_blog_index = 1;
 
     WHILE v_blog_index <= v_blog_count DO
-      SET v_author_id = 9001 + MOD(v_seq + v_blog_index - 1, 20);
+      SET v_author_id = 9001 + MOD(v_seq + v_blog_index - 1, 8);
       SET v_focus = CASE MOD(v_blog_index, 5)
         WHEN 1 THEN v_hint_a
         WHEN 2 THEN v_hint_b
@@ -1498,8 +1488,8 @@ BEGIN
         CONCAT('AI探店-', v_shop_id, '-', LPAD(v_blog_index, 2, '0'), ' ', v_scene),
         '/imgs/blogs/blog1.jpg',
         CONCAT('打卡', v_name, '。', v_hint_a, '。', v_hint_b, '。', v_focus, '。', v_extra, '。', v_hint_c, '。'),
-        18 + MOD(v_seq * v_blog_index * 17, 620),
-        1 + MOD(v_seq * v_blog_index, 96),
+        66 + MOD(v_seq * v_blog_index * 23, 1180),
+        12 + MOD(v_seq * v_blog_index * 7, 260),
         DATE_SUB(NOW(), INTERVAL v_age_days DAY),
         DATE_ADD(DATE_SUB(NOW(), INTERVAL v_age_days DAY), INTERVAL MOD(v_blog_index * 3, 36) HOUR)
       );

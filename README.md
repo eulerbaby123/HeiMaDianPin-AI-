@@ -1,4 +1,4 @@
-# 黑马点评 AI 升级版
+# 黑马点评 大模型（AI） 升级版
 
 这是一个在原始黑马点评项目基础上做的 AI 改造版仓库。项目保留了原有的本地生活业务能力，同时新增了 3 个大模型功能，并把 AI 能力拆成独立 Sidecar 服务，避免直接改动主项目的技术底座。
 
@@ -11,6 +11,7 @@
 5. 面试深度拆解文档：`myself-readme.md`
 
 ## 项目改造点
+
 
 在原项目基础上，本仓库重点新增了以下能力：
 
@@ -149,7 +150,7 @@ sql/open-source-full-init.sql
 3. 补齐 `tb_shop.shop_desc`
 4. 导入基础演示数据
 5. 额外导入 30 家美食类 AI 测试店铺
-6. 为这 30 家店铺生成 5 到 15 条博客样本
+6. 为这 30 家店铺生成 14 到 22 条博客样本，并提高互动量用于 AI 演示
 
 如果你已经有原始 `hmdp` 数据库，也可以只执行：
 
@@ -197,7 +198,7 @@ hmdp-ai-service/src/main/resources/application.yaml
 Windows 示例：
 
 ```bash
-set DASHSCOPE_API_KEY=你的key
+set DASHSCOPE_API_KEY=你的阿里千问api-key
 set DASHSCOPE_MODEL=qwen-turbo-flash
 ```
 
@@ -322,8 +323,3 @@ AI 子服务：
 - 店铺列表 AI 助手：`dianping-nginx-1.18.0/nginx-1.18.0 dianping/html/hmdp/shop-list.html`
 - 发笔记 AI 风控：`dianping-nginx-1.18.0/nginx-1.18.0 dianping/html/hmdp/blog-edit.html`
 
-## 额外说明
-
-1. 本仓库的深度技术拆解在 `myself-readme.md`，适合面试准备。
-2. 如果只是想快速跑通项目，优先看本文档和 `sql/open-source-full-init.sql`。
-3. 如果要切换模型供应商，只需要替换 AI 子服务的模型接入层，主项目不用大改。
