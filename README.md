@@ -30,7 +30,7 @@
 ---
 
 ## 项目简介
-一个基于黑马点评项目的 AI 升级实践：在不推翻原有技术底座的前提下，用 Sidecar 架构把店铺总结、智能推荐与评论风控三类大模型能力真正接入业务链路。
+一个基于黑马点评项目的 AI 升级实践：用 Sidecar 架构把店铺总结、智能推荐与评论风控三类大模型能力接入业务链路。
 
 这是一个在原始黑马点评项目基础上完成的 AI 改造版仓库。
 
@@ -195,7 +195,7 @@ flowchart LR
 </div>
 
 > 三张图片顺序分别对应：AI 点评助手、AI 店铺口碑总结、评论校验。  
-> 由于截图为手机长图，README 采用并排卡片式排版，更适合 GitHub 页面展示。
+
 
 ---
 
@@ -310,7 +310,7 @@ dianping-nginx-1.18.0/src/main/resources/application.yaml
 hmdp-ai-service/src/main/resources/application.yaml
 ```
 
-现在已经改成环境变量读取，不需要把 Key 写进仓库。
+现在已经改成环境变量读取，不需要把 Key 显式写进仓库。
 
 Windows 示例：
 
@@ -360,7 +360,7 @@ dianping-nginx-1.18.0/nginx-1.18.0 dianping/conf/nginx.conf
 axios.defaults.baseURL = "/api";
 ```
 
-所以建议通过 Nginx 访问页面，而不是直接双击 HTML 文件。
+建议通过 Nginx 访问页面。
 
 ### 7. 启动顺序
 
