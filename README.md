@@ -152,10 +152,7 @@ sql/open-source-full-init.sql
 5. 额外导入 30 家美食类 AI 测试店铺
 6. 为这 30 家店铺生成 14 到 22 条博客样本，并提高互动量用于 AI 演示
 
-如果你已经有原始 `hmdp` 数据库，也可以只执行：
 
-- `dianping-nginx-1.18.0/src/main/resources/db/hmdp.sql`
-- `dianping-nginx-1.18.0/src/main/resources/db/migration_20260326_ai_upgrade.sql`
 
 ### 3. 修改主项目配置
 
